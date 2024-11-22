@@ -17,8 +17,8 @@ from .types import (
     Response,
     Result,
 )
-# import logging
-# logging.basicConfig(level=logging.DEBUG)
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
 
@@ -48,14 +48,14 @@ class Anthill:
             else agent.instructions
         )
         agent_list = [f"{k+1}: {t_agent.name}" for k, t_agent in enumerate(agent.transfers)]
-        instructions = f"Your are {agent.name}. \n// INSTRUCTIONS:\n{instructions}\n Do NOT assume anything or use placeholders."
+        instructions = f"Your are {agent.name}. \n// INSTRUCTIONS:\n{instructions}\n\n// NOT ALLAOWED:\n- Make assumptions\n- Use placeholders\n\n"
 
         tools_map = [{f.__name__: f.__doc__} for f in agent.functions]
         if len(agent_list) > 0:
             agent_list_inst = "\n".join(agent_list)
-            instructions = f"{instructions}\n// TEAM AGENTS (agent_id: name): {agent_list_inst}"
+            instructions = f"{instructions}\nYou are part of a teams of Agents.\n// TEAM AGENTS (agent_id: name): {agent_list_inst}"
             tools_map.append({"TransferToAgent": "Tranfer to team Agent"})
-        tools_map.append({"AgentResponse": "Send a message/question to user."})
+        # tools_map.append({"AgentResponse": "Send a message/question to user."})
         
         
         if len(tools_map) > 0:
@@ -90,7 +90,8 @@ class Anthill:
             "system": instructions,
             "response_type": response_type,
             "stream": stream,
-            "use_cot": True
+            "use_cot": True,
+            "temperature": 0.0
         }
         response = self.client.chat_completion(**create_params)
 
@@ -145,7 +146,7 @@ class Anthill:
                     "role": "tool",
                     # "tool_call_id": func.id,
                     "tool_name": name,
-                    "content": f"{name}: => {result.value}",
+                    "content": f"Response of {name}: {result.value}",
                 }
             )
             partial_response.context_variables.update(result.context_variables)
