@@ -1,25 +1,16 @@
 # Triage agent
 
-This example is a Anthill containing a triage agent, which takes in user inputs and chooses whether to respond directly, or triage the request
+This example is a Swarm containing a triage agent, which takes in user inputs and chooses whether to respond directly, or triage the request
 to a sales or refunds agent.
 
 ## Setup
 
-To run the triage agent Anthill:
+To run the triage agent Swarm:
 
-1. Copy env.example
-
-```shell
-$ cp .env.example .env
-```
-
-2. Set GROQ API KEY, or other provider endpoint if using other model
-
-
-3. Run
+1. Run
 
 ```shell
-$ python3 run.py
+python3 run.py
 ```
 
 ## Evals
@@ -34,5 +25,5 @@ is 'successful', as defined in our prompt in `evals.py`.
 To run the evals, run
 
 ```shell
-$ pytest evals.py
+pytest evals.py
 ```

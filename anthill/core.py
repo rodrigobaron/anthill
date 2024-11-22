@@ -1,116 +1,37 @@
 # Standard library imports
 import copy
 import json
-import time
-from typing import List, Union, Optional
-from collections.abc import Iterable
+from collections import defaultdict
+from typing import List, Callable, Union
 
 # Package/library imports
-from litellm import completion
-from jinja2 import Template
-from abc import ABC, abstractmethod
+from pulsar.client import OpenAiApiLike, Message as ClientMessage, MessageRole as ClientMessageRole
 
 # Local imports
-from .util import function_to_json, debug_print
-from .prompts import SYSTEM_PROMPT
+from .util import function_to_json, debug_print, merge_chunk
 from .types import (
     Agent,
-    StepCompletionMessage,
+    AgentResponse,
+    AgentFunction,
+    TransferToAgent,
+    Message,
     Response,
     Result,
 )
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
 
-
-class AnthillCallback(ABC):
-    @abstractmethod
-    def before_first_thought(
-        agent: Agent,
-        history: List,
-        context_variables: dict,
-        model_override: str,
-        execute_tools: bool,
-    ) -> Optional[StepCompletionMessage]:
-        pass
-
-    @abstractmethod
-    def before_tool_call(
-        tool_name: str,
-        tool_input: Optional[Union[dict, str]],
-        agent: Agent,
-        history: List,
-        context_variables: dict,
-        model_override: str,
-        execute_tools: bool,
-    ) -> Optional[StepCompletionMessage]:
-        pass
-
-    @abstractmethod
-    def before_last_thought(
-        last_step: StepCompletionMessage,
-        step_count: int,
-        agent: Agent,
-        history: List,
-        context_variables: dict,
-        model_override: str,
-        execute_tools: bool,
-    ) -> Optional[StepCompletionMessage]:
-        pass
-
+client_role_map = {
+    "assistant": ClientMessageRole.ASSISTANT,
+    "user": ClientMessageRole.USER,
+    "tool": ClientMessageRole.TOOL
+}
 
 class Anthill:
-
-    def get_step_completion(
-        self,
-        agent: Agent,
-        history: List,
-        context_variables: dict,
-        model_override: str,
-        execute_tools: bool = True,
-        response_format: Union[dict, str] = None,
-    ) -> StepCompletionMessage:
-        instructions = (
-            agent.instructions(context_variables)
-            if callable(agent.instructions)
-            else agent.instructions
-        )
-        completion_args = agent.completion_args or {}
-        functions_json = (
-            [function_to_json(f) for f in agent.functions] if execute_tools else []
-        )
-        template = Template(SYSTEM_PROMPT)
-        system_prompt = template.render(
-            **{
-                "name": agent.name,
-                "tools": functions_json,
-                "instructions": instructions,
-            }
-        )
-
-        model = model_override or agent.model
-        messages = [{"role": "system", "content": system_prompt}] + history
-        messages = [{"role": m["role"], "content": m["content"]} for m in messages]
-        for attempt in range(3):
-            create_params = dict(
-                model=model,
-                messages=messages,
-                stream=False,
-                response_format=response_format,
-                **completion_args,
-            )
-            try:
-                response = completion(**create_params)
-                return StepCompletionMessage.parse_raw(
-                    response.choices[0].message.content
-                )
-            except Exception as e:
-                debug_print("attempt", attempt, str(e))
-                if attempt == 2:
-                    return StepCompletionMessage.parse_raw(
-                        f'{{"title": "Error", "content": "Failed to generate step after 3 attempts. Error: {str(e)}", "next_action": "final_step"}}'
-                    )
-                time.sleep(1)  # Wait for 1 second before retrying
+    def __init__(self, client: OpenAiApiLike):
+        self.client = client
 
     def get_chat_completion(
         self,
@@ -119,44 +40,79 @@ class Anthill:
         context_variables: dict,
         model_override: str,
         stream: bool,
-        response_format: Union[dict, str] = None,
-    ) -> Iterable[str]:
+        debug: bool,
+    ) -> Message:
+        context_variables = defaultdict(str, context_variables)
         instructions = (
             agent.instructions(context_variables)
             if callable(agent.instructions)
             else agent.instructions
         )
-        completion_args = agent.completion_args or {}
-        template = Template(SYSTEM_PROMPT)
-        system_prompt = template.render(
-            **{"name": agent.name, "tools": [], "instructions": instructions}
-        )
+        agent_list = [f"{k+1}: {t_agent.name}" for k, t_agent in enumerate(agent.transfers)]
+        instructions = f"Your are {agent.name}. \n# INSTRUCTIONS:\n{instructions}"
+        if len(agent_list) > 0:
+            agent_list_inst = "\n".join(agent_list)
+            instructions = f"{instructions}\n# TEAM AGENTS (agent_id: name): {agent_list_inst}"
+            
+        messages = []
+        for h in history:
+            messages.append(ClientMessage(role=client_role_map[h["role"]], content= h["content"]))
+            tool_calls = h.get("tool_calls") or []
+            for t in tool_calls:
+                tool = t["arguments"]
+                # if isinstance(tool, TransferToAgent):
+                #     continue
+                messages.append(ClientMessage(role=client_role_map[h["role"]], content= str(tool)))
+            
+        debug_print(debug, "Getting chat completion for...:", instructions, messages)
 
-        model = model_override or agent.model
-        messages = [{"role": "system", "content": system_prompt}] + history
-        messages = [{"role": m["role"], "content": m["content"]} for m in messages]
-        create_params = dict(
-            model=model,
-            messages=messages,
-            stream=stream,
-            response_format=response_format,
-            **completion_args,
-        )
-        response = completion(**create_params)
-        if stream:
-            for part in response:
-                yield part.choices[0].delta.content or ""
+        # tools = [function_to_json(f) for f in agent.functions]
+        # # hide context_variables from model
+        # for tool in tools:
+        #     params = tool["function"]["parameters"]
+        #     params["properties"].pop(__CTX_VARS_NAME__, None)
+        #     if __CTX_VARS_NAME__ in params["required"]:
+        #         params["required"].remove(__CTX_VARS_NAME__)
+
+        # TODO: should act be Union[AgentResponse, TransferToAgent, List[AgentFunction]]
+        # or Union[AgentResponse, TransferToAgent, List[Union[AgentFunction1, ...]]]
+        if len(agent.functions) > 0:
+            type_agent_functions = Union[tuple(agent.functions)] if len(agent.functions) > 1 else agent.functions
+            if len(agent.transfers) > 0:
+                response_type = Union[AgentResponse, TransferToAgent, List[type_agent_functions]]
+            else:
+                response_type = Union[AgentResponse, List[type_agent_functions]]
         else:
-            yield response.choices[0].message.content
+            if len(agent.transfers) > 0:
+                response_type = Union[AgentResponse, TransferToAgent]
+            else:
+                response_type = AgentResponse
+        
+        create_params = {
+            "model": model_override or agent.model,
+            "messages": messages,
+            "system": instructions,
+            "response_type": response_type,
+            "stream": stream,
+            "use_cot": True
+        }
+        response = self.client.chat_completion(**create_params)
 
-    def handle_function_result(self, result) -> Result:
+        if isinstance(response, AgentResponse):
+            return Message(sender=agent.name, role="assistant", content=response.content)
+        
+        response = response if isinstance(response, list) else [response]
+        response = [{"name": r.__class__.__name__, "arguments": r} for r in response]
+        return Message(sender=agent.name, role="assistant", tool_calls=response)
+
+    def handle_function_result(self, result, debug) -> Result:
         match result:
             case Result() as result:
                 return result
 
             case Agent() as agent:
                 return Result(
-                    value=json.dumps({"assistant": agent.name}),
+                    value= f"current assistant: {agent.name}.\n If your are {agent.name} please handle the user request!",
                     agent=agent,
                 )
             case _:
@@ -164,8 +120,156 @@ class Anthill:
                     return Result(value=str(result))
                 except Exception as e:
                     error_message = f"Failed to cast response to string: {result}. Make sure agent functions return a string or Result object. Error: {str(e)}"
-                    debug_print(error_message)
+                    debug_print(debug, error_message)
                     raise TypeError(error_message)
+
+    def handle_tool_calls(
+        self,
+        tool_calls: List,
+        current_agent: Agent,
+        context_variables: dict,
+        debug: bool,
+    ) -> Response:
+        # function_map = {f.__name__: f for f in functions}
+        partial_response = Response(
+            messages=[], agent=None, context_variables={})
+
+        for tool_call in tool_calls:
+            name = tool_call["name"]
+            func = tool_call["arguments"]
+            # handle missing tool case, skip to next tool
+            # if name not in function_map:
+            #     debug_print(debug, f"Tool {name} not found in function map.")
+            #     partial_response.messages.append(
+            #         {
+            #             "role": "tool",
+            #             "tool_call_id": tool_call.id,
+            #             "tool_name": name,
+            #             "content": f"Error: Tool {name} not found.",
+            #         }
+            #     )
+            #     continue
+            # args = json.loads(tool_call.function.arguments)
+            # debug_print(
+            #     debug, f"Processing tool call: {name} with arguments {args}")
+
+            # func = function_map[name]
+            # # pass context_variables to agent functions
+            # if __CTX_VARS_NAME__ in func.__code__.co_varnames:
+            #     args[__CTX_VARS_NAME__] = context_variables
+            # raw_result = function_map[name](**args)
+            if isinstance(func, TransferToAgent):
+                raw_result = current_agent.transfers[func.agent_id-1]
+            else:
+                raw_result = func.run(context_variables=context_variables)
+
+            result: Result = self.handle_function_result(raw_result, debug)
+            
+            partial_response.messages.append(
+                {
+                    "role": "tool",
+                    # "tool_call_id": tool_call.id,
+                    "tool_name": name,
+                    "content": result.value,#f"tool '{name}' result: {result.value}",
+                }
+            )
+            partial_response.context_variables.update(result.context_variables)
+            if result.agent:
+                partial_response.agent = result.agent
+
+        return partial_response
+
+    def run_and_stream(
+        self,
+        agent: Agent,
+        messages: List,
+        context_variables: dict = {},
+        model_override: str = None,
+        debug: bool = False,
+        max_turns: int = float("inf"),
+        execute_tools: bool = True,
+    ):
+        active_agent = agent
+        context_variables = copy.deepcopy(context_variables)
+        history = copy.deepcopy(messages)
+        init_len = len(messages)
+
+        while len(history) - init_len < max_turns:
+
+            message = {
+                "content": "",
+                "sender": agent.name,
+                "role": "assistant",
+                "function_call": None,
+                "tool_calls": defaultdict(
+                    lambda: {
+                        "function": {"arguments": "", "name": ""},
+                        "id": "",
+                        "type": "",
+                    }
+                ),
+            }
+
+            # get completion with current history, agent
+            completion = self.get_chat_completion(
+                agent=active_agent,
+                history=history,
+                context_variables=context_variables,
+                model_override=model_override,
+                stream=True,
+                debug=debug,
+            )
+
+            yield {"delim": "start"}
+            for chunk in completion:
+                delta = json.loads(chunk.choices[0].delta.json())
+                if delta["role"] == "assistant":
+                    delta["sender"] = active_agent.name
+                yield delta
+                delta.pop("role", None)
+                delta.pop("sender", None)
+                merge_chunk(message, delta)
+            yield {"delim": "end"}
+
+            message["tool_calls"] = list(
+                message.get("tool_calls", {}).values())
+            if not message["tool_calls"]:
+                message["tool_calls"] = None
+            debug_print(debug, "Received completion:", message)
+            history.append(message)
+
+            if not message["tool_calls"] or not execute_tools:
+                debug_print(debug, "Ending turn.")
+                break
+
+            # convert tool_calls to objects
+            tool_calls = []
+            for tool_call in message["tool_calls"]:
+                function = Function(
+                    arguments=tool_call["function"]["arguments"],
+                    name=tool_call["function"]["name"],
+                )
+                tool_call_object = ChatCompletionMessageToolCall(
+                    id=tool_call["id"], function=function, type=tool_call["type"]
+                )
+                tool_calls.append(tool_call_object)
+
+            # handle function calls, updating context_variables, and switching agents
+            partial_response = self.handle_tool_calls(
+                tool_calls, active_agent.functions, context_variables, debug
+            )
+            history.extend(partial_response.messages)
+            context_variables.update(partial_response.context_variables)
+            if partial_response.agent:
+                active_agent = partial_response.agent
+
+        yield {
+            "response": Response(
+                messages=history[init_len:],
+                agent=active_agent,
+                context_variables=context_variables,
+            )
+        }
 
     def run(
         self,
@@ -174,176 +278,57 @@ class Anthill:
         context_variables: dict = {},
         model_override: str = None,
         stream: bool = False,
-        max_turns: int = 25,
+        debug: bool = False,
+        max_turns: int = float("inf"),
         execute_tools: bool = True,
-        callback: Optional[AnthillCallback] = None,
-    ) -> Iterable[Response]:
+    ) -> Response:
+        if stream:
+            return self.run_and_stream(
+                agent=agent,
+                messages=messages,
+                context_variables=context_variables,
+                model_override=model_override,
+                debug=debug,
+                max_turns=max_turns,
+                execute_tools=execute_tools,
+            )
         active_agent = agent
         context_variables = copy.deepcopy(context_variables)
         history = copy.deepcopy(messages)
-        history.append(
-            {
-                "role": "assistant",
-                "content": "I will think step by step following my instructions, starting at the beginning after decomposing the problem/task.",
-            }
-        )
-        step_count = 1
-        debug_print("Getting chat completion for...:", messages)
+        init_len = len(messages)
 
-        if callback:
-            before_first_thought = callback.before_first_thought(
-                agent=active_agent,
-                history=copy.deepcopy(messages),
-                context_variables=context_variables,
-                model_override=model_override,
-                execute_tools=execute_tools,
-            )
-            if before_first_thought:
-                history.append(
-                    {"role": "assistant", "content": str(before_first_thought)}
-                )
+        while len(history) - init_len < max_turns and active_agent:
 
-        while True:
-            step_data = self.get_step_completion(
+            # get completion with current history, agent
+            message = self.get_chat_completion(
                 agent=active_agent,
                 history=history,
                 context_variables=context_variables,
                 model_override=model_override,
-                execute_tools=execute_tools,
-                response_format={"type": "json_object"},
+                stream=stream,
+                debug=debug,
+            )
+            debug_print(debug, "Received completion:", message)
+            # message.sender = active_agent.name
+            history.append(
+                json.loads(message.model_dump_json())
             )
 
-            debug_print("Step:", step_count, ",received completion:", step_data)
-            functions_map = {f.__name__: f for f in active_agent.functions}
-            if step_data.tool_name is not None:
-                if step_data.tool_name not in functions_map:
-                    invalid_tool_thought = StepCompletionMessage(
-                        title="Wrong tool",
-                        content=f"I was trying use '{step_data.tool_name}' tool but that is not available. I should consider this tools: {functions_map}",
-                        next_action="continue",
-                    )
-                    history.append(
-                        {"role": "assistant", "content": str(invalid_tool_thought)}
-                    )
-                else:
-                    step_data.tool_input = (
-                        None
-                        if step_data.tool_input in (None, "", "{}", {})
-                        else step_data.tool_input
-                    )
-                    step_data.next_action = "continue"
-                    history.append({"role": "assistant", "content": str(step_data)})
+            if not message.tool_calls or not execute_tools:
+                debug_print(debug, "Ending turn.")
+                break
 
-                    if callback:
-                        before_tool_call = callback.before_tool_call(
-                            tool_name=step_data.tool_name,
-                            tool_input=step_data.tool_input,
-                            agent=active_agent,
-                            history=history,
-                            context_variables=context_variables,
-                            model_override=model_override,
-                            execute_tools=execute_tools,
-                        )
-                        if before_tool_call:
-                            history.append(
-                                {"role": "assistant", "content": str(before_tool_call)}
-                            )
-                            step_count += 1
-                            continue
+            # handle function calls, updating context_variables, and switching agents
+            partial_response = self.handle_tool_calls(
+                message.tool_calls, active_agent, context_variables, debug
+            )
+            history.extend(partial_response.messages)
+            context_variables.update(partial_response.context_variables)
+            if partial_response.agent:
+                active_agent = partial_response.agent
 
-                    if step_data.tool_input is None:
-                        tool_result = functions_map[step_data.tool_name]()
-                    else:
-                        tool_result = functions_map[step_data.tool_name](
-                            step_data.tool_input
-                        )
-
-                    debug_print("Tool result", tool_result)
-                    result: Result = self.handle_function_result(tool_result)
-                    if result.agent:
-                        active_agent = result.agent
-                        debug_print("Active agent changed", active_agent)
-                        history.append(
-                            {
-                                "role": "assistant",
-                                "content": f"The {active_agent.name} is handling the resquest from now.",
-                            }
-                        )
-                    else:
-                        history.append(
-                            {
-                                "role": "assistant",
-                                "content": f"{step_data.tool_name} result: {tool_result}",
-                            }
-                        )
-            else:
-                if callback:
-                    before_last_thought = callback.before_last_thought(
-                        last_step=step_data,
-                        step_count=step_count,
-                        agent=active_agent,
-                        history=history,
-                        context_variables=context_variables,
-                        model_override=model_override,
-                        execute_tools=execute_tools,
-                    )
-                    if before_last_thought:
-                        step_data.next_action = "continue"
-                        history.append({"role": "assistant", "content": str(step_data)})
-                        step_data = before_last_thought
-
-                if step_count > max_turns:
-                    step_data.next_action = "final_step"
-
-                history.append({"role": "assistant", "content": str(step_data)})
-                if step_data.next_action == "final_step":
-                    break
-            step_count += 1
-
-        # Generate final answer
-        history.append(
-            {
-                "role": "user",
-                "content": "Please provide the final content to the user based solely on your reasoning above. Do not use JSON formatting. Only provide the response without any titles or preambles. Retain any formatting as instructed by the original prompt, such as exact formatting for free response or multiple choice.",
-            }
-        )
-
-        g = self.get_chat_completion(
-            agent=active_agent,
-            history=history,
-            context_variables=context_variables,
-            model_override=model_override,
-            stream=stream,
-        )
-
-        final_data = ""
-        for chunk in g:
-            final_data += chunk
-            if stream:
-                yield {
-                    "partial": Response(
-                        messages=[
-                            {
-                                "role": "assistant",
-                                "content": chunk,
-                                "sender": active_agent.name,
-                            }
-                        ],
-                        agent=active_agent,
-                        context_variables=context_variables,
-                    )
-                }
-
-        response = Response(
-            messages=[
-                {
-                    "role": "assistant",
-                    "content": final_data,
-                    "sender": active_agent.name,
-                }
-            ],
+        return Response(
+            messages=history[init_len:],
             agent=active_agent,
             context_variables=context_variables,
         )
-        debug_print("Response:", response)
-        yield {"result": response}

@@ -1,8 +1,8 @@
-from anthill import Anthill
+from swarm import Swarm
 from agents import weather_agent
 import pytest
 
-client = Anthill()
+client = Swarm()
 
 
 def run_and_get_tool_calls(agent, query):

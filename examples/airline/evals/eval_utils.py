@@ -2,7 +2,7 @@ import datetime
 import json
 import uuid
 
-from anthill import Anthill
+from swarm import Swarm
 
 
 def run_function_evals(agent, test_cases, n=1, eval_path=None):
@@ -10,7 +10,7 @@ def run_function_evals(agent, test_cases, n=1, eval_path=None):
     results = []
     eval_id = str(uuid.uuid4())
     eval_timestamp = datetime.datetime.now().isoformat()
-    client = Anthill()
+    client = Swarm()
 
     for test_case in test_cases:
         case_correct = 0

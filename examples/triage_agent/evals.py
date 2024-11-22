@@ -1,10 +1,10 @@
-from anthill import Anthill
+from swarm import Swarm
 from agents import triage_agent, sales_agent, refunds_agent
 from evals_util import evaluate_with_llm_bool, BoolEvalResult
 import pytest
 import json
 
-client = Anthill()
+client = Swarm()
 
 CONVERSATIONAL_EVAL_SYSTEM_PROMPT = """
 You will be provided with a conversation between a user and an agent, as well as a main goal for the conversation.

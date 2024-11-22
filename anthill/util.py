@@ -1,12 +1,9 @@
 import inspect
 from datetime import datetime
-import os
-
-DEBUG = os.getenv("ANTHILL_DEBUG", False)
 
 
-def debug_print(*args: str) -> None:
-    if not DEBUG:
+def debug_print(debug: bool, *args: str) -> None:
+    if not debug:
         return
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     message = " ".join(map(str, args))

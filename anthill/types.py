@@ -1,34 +1,37 @@
-# from openai.types.chat import ChatCompletionMessage
-from typing import List, Callable, Union, Optional
+from typing import List, Callable, Union, Optional, Literal
 
 # Third-party imports
 from pydantic import BaseModel
+from pulsar.client import Message as ClientMessage, MessageRole as ClientMessageRole
 
-AgentFunction = Callable[[], Union[str, "Agent", dict]]
+
+class AgentResponse(BaseModel):
+    content: str
+
+class AgentFunction(BaseModel):
+    # id: int
+    def run(self, **kwargs):
+        raise NotImplementedError()
+
+class TransferToAgent(BaseModel):
+    # name: Literal["transfer_to_agent"]
+    name: str
+    agent_id: int
 
 
 class Agent(BaseModel):
     name: str = "Agent"
     model: str
     instructions: Union[str, Callable[[], str]] = "You are a helpful agent."
-    functions: List[AgentFunction] = []
-    tool_choice: str = None
-    completion_args: Union[dict, str] = {}
+    functions: List = []
+    transfers: List["Agent"] = []
 
 
-class StepCompletionMessage(BaseModel):
-    title: str
-    content: str
-    next_action: str
-    tool_name: Optional[str] = None
-    tool_input: Optional[Union[dict, str]] = None
-
-    def __repr__(self):
-        dict = {k: v for k, v in self.dict().items() if v is not None}
-        return str(dict)
-
-    def __str__(self):
-        return self.__repr__()
+class Message(BaseModel):
+    sender: Optional[str] = None
+    role: str
+    content: Optional[str] = None
+    tool_calls: Optional[List] = None
 
 
 class Response(BaseModel):

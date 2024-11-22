@@ -1,9 +1,6 @@
 import json
 
-from anthill import Agent
-from dotenv import load_dotenv
-
-load_dotenv()
+from swarm import Agent
 
 
 def get_weather(location, time="now"):
@@ -21,7 +18,6 @@ def send_email(recipient, subject, body):
 
 weather_agent = Agent(
     name="Weather Agent",
-    model="openrouter/meta-llama/llama-3.1-70b-instruct:free",
     instructions="You are a helpful agent.",
     functions=[get_weather, send_email],
 )

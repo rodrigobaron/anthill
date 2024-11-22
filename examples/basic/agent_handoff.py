@@ -1,6 +1,6 @@
-from anthill import Anthill, Agent
+from swarm import Swarm, Agent
 
-client = Anthill()
+client = Swarm()
 
 english_agent = Agent(
     name="English Agent",

@@ -2,9 +2,9 @@ import datetime
 import random
 
 import database
-from anthill import Agent
-from anthill.agents import create_triage_agent
-from anthill.repl import run_demo_loop
+from swarm import Agent
+from swarm.agents import create_triage_agent
+from swarm.repl import run_demo_loop
 
 
 def refund_item(user_id, item_id):
