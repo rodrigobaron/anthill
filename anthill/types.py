@@ -1,22 +1,24 @@
 from typing import List, Callable, Union, Optional, Literal
 
 # Third-party imports
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pulsar.client import Message as ClientMessage, MessageRole as ClientMessageRole
 
 
 class AgentResponse(BaseModel):
     content: str
 
+
 class AgentFunction(BaseModel):
-    # id: int
+
     def run(self, **kwargs):
         raise NotImplementedError()
 
+
 class TransferToAgent(BaseModel):
     # name: Literal["transfer_to_agent"]
+    agent_id: int = Field(..., description="The agent id to tranfer to.")
     name: str
-    agent_id: int
 
 
 class Agent(BaseModel):

@@ -12,21 +12,20 @@ from .util import function_to_json, debug_print, merge_chunk
 from .types import (
     Agent,
     AgentResponse,
-    AgentFunction,
     TransferToAgent,
     Message,
     Response,
     Result,
 )
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
 
 client_role_map = {
     "assistant": ClientMessageRole.ASSISTANT,
     "user": ClientMessageRole.USER,
-    "tool": ClientMessageRole.TOOL
+    "tool": ClientMessageRole.ASSISTANT
 }
 
 class Anthill:
@@ -49,33 +48,30 @@ class Anthill:
             else agent.instructions
         )
         agent_list = [f"{k+1}: {t_agent.name}" for k, t_agent in enumerate(agent.transfers)]
-        instructions = f"Your are {agent.name}. \n# INSTRUCTIONS:\n{instructions}"
+        instructions = f"Your are {agent.name}. \n// INSTRUCTIONS:\n{instructions}\n Do NOT assume anything or use placeholders."
+
+        tools_map = [{f.__name__: f.__doc__} for f in agent.functions]
         if len(agent_list) > 0:
             agent_list_inst = "\n".join(agent_list)
-            instructions = f"{instructions}\n# TEAM AGENTS (agent_id: name): {agent_list_inst}"
-            
+            instructions = f"{instructions}\n// TEAM AGENTS (agent_id: name): {agent_list_inst}"
+            tools_map.append({"TransferToAgent": "Tranfer to team Agent"})
+        tools_map.append({"AgentResponse": "Send a message/question to user."})
+        
+        
+        if len(tools_map) > 0:
+            tool_list_inst = "\n".join([f"{k}: {v}" for t in tools_map for k, v in t.items()])
+            instructions = f"{instructions}\n// TOOLS: {tool_list_inst}"
+
         messages = []
         for h in history:
             messages.append(ClientMessage(role=client_role_map[h["role"]], content= h["content"]))
             tool_calls = h.get("tool_calls") or []
             for t in tool_calls:
                 tool = t["arguments"]
-                # if isinstance(tool, TransferToAgent):
-                #     continue
                 messages.append(ClientMessage(role=client_role_map[h["role"]], content= str(tool)))
             
         debug_print(debug, "Getting chat completion for...:", instructions, messages)
 
-        # tools = [function_to_json(f) for f in agent.functions]
-        # # hide context_variables from model
-        # for tool in tools:
-        #     params = tool["function"]["parameters"]
-        #     params["properties"].pop(__CTX_VARS_NAME__, None)
-        #     if __CTX_VARS_NAME__ in params["required"]:
-        #         params["required"].remove(__CTX_VARS_NAME__)
-
-        # TODO: should act be Union[AgentResponse, TransferToAgent, List[AgentFunction]]
-        # or Union[AgentResponse, TransferToAgent, List[Union[AgentFunction1, ...]]]
         if len(agent.functions) > 0:
             type_agent_functions = Union[tuple(agent.functions)] if len(agent.functions) > 1 else agent.functions
             if len(agent.transfers) > 0:
@@ -130,34 +126,13 @@ class Anthill:
         context_variables: dict,
         debug: bool,
     ) -> Response:
-        # function_map = {f.__name__: f for f in functions}
         partial_response = Response(
             messages=[], agent=None, context_variables={})
 
         for tool_call in tool_calls:
             name = tool_call["name"]
             func = tool_call["arguments"]
-            # handle missing tool case, skip to next tool
-            # if name not in function_map:
-            #     debug_print(debug, f"Tool {name} not found in function map.")
-            #     partial_response.messages.append(
-            #         {
-            #             "role": "tool",
-            #             "tool_call_id": tool_call.id,
-            #             "tool_name": name,
-            #             "content": f"Error: Tool {name} not found.",
-            #         }
-            #     )
-            #     continue
-            # args = json.loads(tool_call.function.arguments)
-            # debug_print(
-            #     debug, f"Processing tool call: {name} with arguments {args}")
-
-            # func = function_map[name]
-            # # pass context_variables to agent functions
-            # if __CTX_VARS_NAME__ in func.__code__.co_varnames:
-            #     args[__CTX_VARS_NAME__] = context_variables
-            # raw_result = function_map[name](**args)
+            
             if isinstance(func, TransferToAgent):
                 raw_result = current_agent.transfers[func.agent_id-1]
             else:
@@ -168,9 +143,9 @@ class Anthill:
             partial_response.messages.append(
                 {
                     "role": "tool",
-                    # "tool_call_id": tool_call.id,
+                    # "tool_call_id": func.id,
                     "tool_name": name,
-                    "content": result.value,#f"tool '{name}' result: {result.value}",
+                    "content": f"{name}: => {result.value}",
                 }
             )
             partial_response.context_variables.update(result.context_variables)
