@@ -18,14 +18,14 @@ from .types import (
     Result,
 )
 import logging
-# logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
 
 client_role_map = {
     "assistant": ClientMessageRole.ASSISTANT,
     "user": ClientMessageRole.USER,
-    "tool": ClientMessageRole.ASSISTANT
+    "tool": ClientMessageRole.TOOL
 }
 
 class Anthill:
@@ -48,27 +48,26 @@ class Anthill:
             else agent.instructions
         )
         agent_list = [f"{k+1}: {t_agent.name}" for k, t_agent in enumerate(agent.transfers)]
-        instructions = f"Your are {agent.name}. \n// INSTRUCTIONS:\n{instructions}\n\n// NOT ALLAOWED:\n- Make assumptions\n- Use placeholders\n\n"
+        instructions = f"Your are {agent.name}. \n## INSTRUCTIONS\n{instructions}\n\n## NOT ALLAOWED\n- Make assumptions\n- Use placeholders\n\n"
 
         tools_map = [{f.__name__: f.__doc__} for f in agent.functions]
         if len(agent_list) > 0:
             agent_list_inst = "\n".join(agent_list)
-            instructions = f"{instructions}\nYou are part of a teams of Agents.\n// TEAM AGENTS (agent_id: name): {agent_list_inst}"
+            instructions = f"{instructions}\n## TEAM AGENTS\n You are part of a teams of Agents (agent_id: name):\n{agent_list_inst}"
             tools_map.append({"TransferToAgent": "Tranfer to team Agent"})
-        # tools_map.append({"AgentResponse": "Send a message/question to user."})
-        
         
         if len(tools_map) > 0:
             tool_list_inst = "\n".join([f"{k}: {v}" for t in tools_map for k, v in t.items()])
-            instructions = f"{instructions}\n// TOOLS: {tool_list_inst}"
+            instructions = f"{instructions}\n## TOOLS \n{tool_list_inst}"
 
         messages = []
         for h in history:
-            messages.append(ClientMessage(role=client_role_map[h["role"]], content= h["content"]))
+            if h["content"] is not None:
+                messages.append(ClientMessage(role=client_role_map[h["role"]], content=h["content"]))
             tool_calls = h.get("tool_calls") or []
             for t in tool_calls:
                 tool = t["arguments"]
-                messages.append(ClientMessage(role=client_role_map[h["role"]], content= str(tool)))
+                messages.append(ClientMessage(role=client_role_map[h["role"]], content=str(tool)))
             
         debug_print(debug, "Getting chat completion for...:", instructions, messages)
 
@@ -116,7 +115,8 @@ class Anthill:
 
             case Agent() as agent:
                 return Result(
-                    value= f"current assistant: {agent.name}.\n If your are {agent.name} please handle the user request!",
+                    # value= f"current assistant: {agent.name}.\n If your are {agent.name} please handle the user request!",
+                    value=f"'current_agent': '{agent.name}'",
                     agent=agent,
                 )
             case _:
@@ -153,7 +153,7 @@ class Anthill:
                     "role": "tool",
                     # "tool_call_id": func.id,
                     "tool_name": name,
-                    "content": f"Response of {name}: {result.value}",
+                    "content": f"Tool {name} finished with status: {result.value}",
                 }
             )
             partial_response.context_variables.update(result.context_variables)
