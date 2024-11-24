@@ -18,7 +18,7 @@ from .types import (
     Result,
 )
 import logging
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
 
@@ -91,10 +91,17 @@ class Anthill:
             "response_type": response_type,
             "stream": stream,
             "use_cot": True,
-            "temperature": 0.0
+            "temperature": 0.1
         }
         response = self.client.chat_completion(**create_params)
-
+        if stream:
+            return response
+        return self._make_message(response, agent)
+    
+    def _make_message(self, response, agent):
+        if response is None:
+            return Message(sender=agent.name, role="assistant", content=None)
+        
         if isinstance(response, AgentResponse):
             return Message(sender=agent.name, role="assistant", content=response.content)
         
@@ -172,19 +179,19 @@ class Anthill:
 
         while len(history) - init_len < max_turns:
 
-            message = {
-                "content": "",
-                "sender": agent.name,
-                "role": "assistant",
-                "function_call": None,
-                "tool_calls": defaultdict(
-                    lambda: {
-                        "function": {"arguments": "", "name": ""},
-                        "id": "",
-                        "type": "",
-                    }
-                ),
-            }
+            # message = {
+            #     "content": "",
+            #     "sender": agent.name,
+            #     "role": "assistant",
+            #     "function_call": None,
+            #     "tool_calls": defaultdict(
+            #         lambda: {
+            #             "function": {"arguments": "", "name": ""},
+            #             "id": "",
+            #             "type": "",
+            #         }
+            #     ),
+            # }
 
             # get completion with current history, agent
             completion = self.get_chat_completion(
@@ -198,41 +205,22 @@ class Anthill:
 
             yield {"delim": "start"}
             for chunk in completion:
-                delta = json.loads(chunk.choices[0].delta.json())
-                if delta["role"] == "assistant":
-                    delta["sender"] = active_agent.name
-                yield delta
-                delta.pop("role", None)
-                delta.pop("sender", None)
-                merge_chunk(message, delta)
+                message = self._make_message(chunk, active_agent)
+                yield message
             yield {"delim": "end"}
 
-            message["tool_calls"] = list(
-                message.get("tool_calls", {}).values())
-            if not message["tool_calls"]:
-                message["tool_calls"] = None
             debug_print(debug, "Received completion:", message)
-            history.append(message)
-
-            if not message["tool_calls"] or not execute_tools:
+            history.append(
+                json.loads(message.model_dump_json())
+            )
+            tool_calls = message.tool_calls or []
+            if len(tool_calls) == 0 or not execute_tools:
                 debug_print(debug, "Ending turn.")
                 break
 
-            # convert tool_calls to objects
-            tool_calls = []
-            for tool_call in message["tool_calls"]:
-                function = Function(
-                    arguments=tool_call["function"]["arguments"],
-                    name=tool_call["function"]["name"],
-                )
-                tool_call_object = ChatCompletionMessageToolCall(
-                    id=tool_call["id"], function=function, type=tool_call["type"]
-                )
-                tool_calls.append(tool_call_object)
-
             # handle function calls, updating context_variables, and switching agents
             partial_response = self.handle_tool_calls(
-                tool_calls, active_agent.functions, context_variables, debug
+                message.tool_calls, active_agent, context_variables, debug
             )
             history.extend(partial_response.messages)
             context_variables.update(partial_response.context_variables)

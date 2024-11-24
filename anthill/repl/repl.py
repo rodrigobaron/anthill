@@ -1,6 +1,7 @@
 import json
 
 from anthill import Anthill
+from anthill.types import Message
 
 
 def process_and_print_streaming_response(response):
@@ -8,23 +9,24 @@ def process_and_print_streaming_response(response):
     last_sender = ""
 
     for chunk in response:
-        if "sender" in chunk:
-            last_sender = chunk["sender"]
+        if isinstance(chunk, Message):
+            if chunk.sender:
+                last_sender = chunk.sender
 
-        if "content" in chunk and chunk["content"] is not None:
-            if not content and last_sender:
-                print(f"\033[94m{last_sender}:\033[0m", end=" ", flush=True)
-                last_sender = ""
-            print(chunk["content"], end="", flush=True)
-            content += chunk["content"]
+            if chunk.content:
+                if not content and last_sender:
+                    print(f"\033[94m{last_sender}:\033[0m", end=" ", flush=True)
+                    last_sender = ""
+                print(chunk.content, end="", flush=True)
+                content = chunk.content
 
-        if "tool_calls" in chunk and chunk["tool_calls"] is not None:
-            for tool_call in chunk["tool_calls"]:
-                f = tool_call["function"]
-                name = f["name"]
+            tool_calls = chunk.tool_calls or []
+            for tool_call in tool_calls:
+                name, args = tool_call["name"], tool_call["arguments"]
                 if not name:
                     continue
-                print(f"\033[94m{last_sender}: \033[95m{name}\033[0m()")
+                arg_str = args.model_dump_json().replace(":", "=")
+                print(f"\033[94m{last_sender}: \033[95m{name}\033[0m({arg_str[1:-1]})")
 
         if "delim" in chunk and chunk["delim"] == "end" and content:
             print()  # End of response message
