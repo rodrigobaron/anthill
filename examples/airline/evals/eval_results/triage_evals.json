@@ -418,5 +418,224 @@
         "correct_evals": 20,
         "total_evals": 20,
         "overall_accuracy_percent": "100.00%"
+    },
+    {
+        "id": "3e52bb84-77a9-414a-9a45-2752fe3a20e0",
+        "timestamp": "2024-11-25T23:37:33.923495",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I lost my bag!"
+                    }
+                ],
+                "expected_function": "TransferToAgent:2",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "Was the lost bag related to a flight?"
+                ],
+                "case_accuracy": "0.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I had some turbulence on my flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "Did you experience any issues with your flight as a result of the turbulence?"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight please"
+                    }
+                ],
+                "expected_function": "TransferToAgent:1",
+                "actual_function": [
+                    "TransferToAgent:1"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight Modification Agent'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "What is the meaning of life"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "Could you please provide more context or clarify what you are trying to accomplish?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 3,
+        "total_evals": 4,
+        "overall_accuracy_percent": "75.00%"
+    },
+    {
+        "id": "0e756d97-3aa9-4d9a-b8f9-9c4c81310718",
+        "timestamp": "2024-11-25T23:38:56.133947",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I lost my bag!"
+                    }
+                ],
+                "expected_function": "TransferToAgent:2",
+                "actual_function": [
+                    "TransferToAgent:2"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Lost baggage traversal'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I had some turbulence on my flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "What would you like to do about the turbulence on your flight?"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight please"
+                    }
+                ],
+                "expected_function": "TransferToAgent:1",
+                "actual_function": [
+                    "TransferToAgent:1"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight Modification Agent'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "What is the meaning of life"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "I'm not sure I understand how this relates to flights or travel. Can you please provide more context or clarify how I can assist you?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 4,
+        "total_evals": 4,
+        "overall_accuracy_percent": "100.00%"
+    },
+    {
+        "id": "a64a956d-148c-401a-b62f-48f703405e27",
+        "timestamp": "2024-11-25T23:39:24.160337",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I lost my bag!"
+                    }
+                ],
+                "expected_function": "TransferToAgent:2",
+                "actual_function": [
+                    "TransferToAgent:2"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Lost baggage traversal'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I had some turbulence on my flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "Did you experience any issues with your flight as a result of the turbulence?"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight please"
+                    }
+                ],
+                "expected_function": "TransferToAgent:1",
+                "actual_function": [
+                    "TransferToAgent:1"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight Modification Agent'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "What is the meaning of life"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "That's a very deep question. Is this related to a specific issue or concern you're facing?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 4,
+        "total_evals": 4,
+        "overall_accuracy_percent": "100.00%"
     }
 ]

@@ -1,5 +1,6 @@
 from configs.agents import *
-from swarm.repl import run_demo_loop
+from anthill.repl import run_demo_loop
+from pulsar.client import GroqClient
 
 context_variables = {
     "customer_context": """Here is what you know about the customer's details:
@@ -16,4 +17,4 @@ context_variables = {
 The flight # is 1919. The flight departure date is 3pm ET, 5/21/2024.""",
 }
 if __name__ == "__main__":
-    run_demo_loop(triage_agent, context_variables=context_variables, debug=True)
+    run_demo_loop(client=GroqClient(), starting_agent=triage_agent, context_variables=context_variables, debug=False)

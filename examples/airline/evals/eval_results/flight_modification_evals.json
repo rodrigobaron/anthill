@@ -241,5 +241,176 @@
         "correct_evals": 15,
         "total_evals": 15,
         "overall_accuracy_percent": "100.00%"
+    },
+    {
+        "id": "f5489ef0-886c-4696-a96a-54d6d84eb7d1",
+        "timestamp": "2024-11-25T23:37:36.777547",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to change my flight to one day earlier!"
+                    }
+                ],
+                "expected_function": "TransferToFlightChange",
+                "actual_function": [
+                    "TransferToAgent:2"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight change traversal'"
+                ],
+                "case_accuracy": "0.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight. I can't make it anymore due to a personal conflict"
+                    }
+                ],
+                "expected_function": "TransferToFlightCancel",
+                "actual_function": [
+                    "TransferToAgent:1"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight cancel traversal'"
+                ],
+                "case_accuracy": "0.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I dont want this flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "I understand you don't want this flight. Can you please tell me if you would like to cancel it or change it to a different flight?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 1,
+        "total_evals": 3,
+        "overall_accuracy_percent": "33.33%"
+    },
+    {
+        "id": "dbdb176b-e84f-4fb1-af1a-9db9c4110bb8",
+        "timestamp": "2024-11-25T23:38:58.694835",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to change my flight to one day earlier!"
+                    }
+                ],
+                "expected_function": "TransferToAgent:2",
+                "actual_function": [
+                    "TransferToAgent:2"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight change traversal'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight. I can't make it anymore due to a personal conflict"
+                    }
+                ],
+                "expected_function": "TransferToAgent:1",
+                "actual_function": [
+                    "TransferToAgent:1"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight cancel traversal'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I dont want this flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "I understand you don't want this flight. Are you looking to cancel it or change it to a different flight?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 3,
+        "total_evals": 3,
+        "overall_accuracy_percent": "100.00%"
+    },
+    {
+        "id": "ac770903-6842-43e9-acab-2fd6cc165e96",
+        "timestamp": "2024-11-25T23:39:26.793400",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to change my flight to one day earlier!"
+                    }
+                ],
+                "expected_function": "TransferToAgent:2",
+                "actual_function": [
+                    "TransferToAgent:2"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight change traversal'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight. I can't make it anymore due to a personal conflict"
+                    }
+                ],
+                "expected_function": "TransferToAgent:1",
+                "actual_function": [
+                    "TransferToAgent:1"
+                ],
+                "actual_message": [
+                    "Tool TransferToAgent finished with status: 'current_agent': 'Flight cancel traversal'"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I dont want this flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "I understand you don't want this flight. Can you please tell me if you'd like to cancel it or make changes to your booking?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 3,
+        "total_evals": 3,
+        "overall_accuracy_percent": "100.00%"
     }
 ]

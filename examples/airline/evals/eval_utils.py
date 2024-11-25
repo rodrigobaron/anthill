@@ -1,8 +1,9 @@
 import datetime
 import json
 import uuid
+from pulsar.client import GroqClient
 
-from swarm import Swarm
+from anthill import Anthill
 
 
 def run_function_evals(agent, test_cases, n=1, eval_path=None):
@@ -10,9 +11,10 @@ def run_function_evals(agent, test_cases, n=1, eval_path=None):
     results = []
     eval_id = str(uuid.uuid4())
     eval_timestamp = datetime.datetime.now().isoformat()
-    client = Swarm()
+    client = Anthill(client=GroqClient())
 
     for test_case in test_cases:
+
         case_correct = 0
         case_results = {
             "messages": test_case["conversation"],
@@ -27,6 +29,7 @@ def run_function_evals(agent, test_cases, n=1, eval_path=None):
             response = client.run(
                 agent=agent, messages=test_case["conversation"], max_turns=1
             )
+
             output = extract_response_info(response)
             actual_function = output.get("tool_calls", "None")
             actual_message = output.get("message", "None")
@@ -92,15 +95,16 @@ def run_function_evals(agent, test_cases, n=1, eval_path=None):
 
     return overall_accuracy
 
-    return overall_accuracy
-
 
 def extract_response_info(response):
     results = {}
     for message in response.messages:
-        if message["role"] == "tool":
-            results["tool_calls"] = message["tool_name"]
-            break
-        elif not message["tool_calls"]:
+        tool_calls = message.get("tool_calls") or []
+        if len(tool_calls) > 0:
+            if tool_calls[0]["name"] == "TransferToAgent":
+                results["tool_calls"] = f"TransferToAgent:{tool_calls[0]['arguments']['agent_id']}"
+            else:
+                results["tool_calls"] = tool_calls[0]["name"]
+        else:
             results["message"] = message["content"]
     return results

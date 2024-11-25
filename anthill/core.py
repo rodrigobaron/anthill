@@ -17,8 +17,8 @@ from .types import (
     Response,
     Result,
 )
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
 
