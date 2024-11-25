@@ -5,10 +5,10 @@ from collections import defaultdict
 from typing import List, Callable, Union
 
 # Package/library imports
-from pulsar.client import OpenAiApiLike, Message as ClientMessage, MessageRole as ClientMessageRole
+from pulsar.client import OpenAiApiLike
 
 # Local imports
-from .util import function_to_json, debug_print, merge_chunk
+from .util import debug_print
 from .types import (
     Agent,
     AgentResponse,
@@ -21,12 +21,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
-
-client_role_map = {
-    "assistant": ClientMessageRole.ASSISTANT,
-    "user": ClientMessageRole.USER,
-    "tool": ClientMessageRole.TOOL
-}
 
 class Anthill:
     def __init__(self, client: OpenAiApiLike):
@@ -63,11 +57,11 @@ class Anthill:
         messages = []
         for h in history:
             if h["content"] is not None:
-                messages.append(ClientMessage(role=client_role_map[h["role"]], content=h["content"]))
+                messages.append(dict(role=h["role"], content=h["content"]))
             tool_calls = h.get("tool_calls") or []
             for t in tool_calls:
                 tool = t["arguments"]
-                messages.append(ClientMessage(role=client_role_map[h["role"]], content=str(tool)))
+                messages.append(dict(role=h["role"], content=str(tool)))
             
         debug_print(debug, "Getting chat completion for...:", instructions, messages)
 
@@ -178,21 +172,6 @@ class Anthill:
         init_len = len(messages)
 
         while len(history) - init_len < max_turns:
-
-            # message = {
-            #     "content": "",
-            #     "sender": agent.name,
-            #     "role": "assistant",
-            #     "function_call": None,
-            #     "tool_calls": defaultdict(
-            #         lambda: {
-            #             "function": {"arguments": "", "name": ""},
-            #             "id": "",
-            #             "type": "",
-            #         }
-            #     ),
-            # }
-
             # get completion with current history, agent
             completion = self.get_chat_completion(
                 agent=active_agent,

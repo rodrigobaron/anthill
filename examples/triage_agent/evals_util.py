@@ -1,4 +1,4 @@
-from pulsar.client import GroqClient, Message, MessageRole
+from pulsar.client import GroqClient
 
 from pydantic import BaseModel
 from typing import Optional
@@ -16,7 +16,7 @@ def evaluate_with_llm_bool(instruction, data) -> BoolEvalResult:
         model="llama-3.1-70b-versatile",
         system=instruction,
         messages=[
-            Message(content=data, role=MessageRole.USER),
+            dict(content=data, role="user"),
         ],
         response_type=BoolEvalResult,
         use_cot=True

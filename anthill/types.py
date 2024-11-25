@@ -2,7 +2,6 @@ from typing import List, Callable, Union, Optional, Literal
 
 # Third-party imports
 from pydantic import BaseModel, Field
-from pulsar.client import Message as ClientMessage, MessageRole as ClientMessageRole
 
 
 class AgentResponse(BaseModel):
