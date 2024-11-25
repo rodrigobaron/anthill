@@ -16,7 +16,6 @@ class AgentFunction(BaseModel):
 
 
 class TransferToAgent(BaseModel):
-    # name: Literal["transfer_to_agent"]
     agent_id: int = Field(..., description="The agent id to tranfer to.")
     name: str
 

@@ -6,7 +6,6 @@ from pydantic import Field
 class ProcessRefund(AgentFunction):
     """Refund an item. Refund an item. Make sure you have the item_id of the form item_... Ask for user confirmation before processing the refund."""
 
-    # name: Literal["process_refund"]
     item_id: int = Field(..., description="item_id is a number (e.g 10, 123, 1002) to item on database!")
     reason: Optional[str] = "NOT SPECIFIED"
 
