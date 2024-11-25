@@ -1,9 +1,9 @@
-from openai import OpenAI
-import instructor
+from pulsar.client import GroqClient, Message, MessageRole
+
 from pydantic import BaseModel
 from typing import Optional
 
-__client = instructor.from_openai(OpenAI())
+__client = GroqClient()
 
 
 class BoolEvalResult(BaseModel):
@@ -12,12 +12,13 @@ class BoolEvalResult(BaseModel):
 
 
 def evaluate_with_llm_bool(instruction, data) -> BoolEvalResult:
-    eval_result, _ = __client.chat.completions.create_with_completion(
-        model="gpt-4o",
+    eval_result = __client.chat_completion(
+        model="llama-3.1-70b-versatile",
+        system=instruction,
         messages=[
-            {"role": "system", "content": instruction},
-            {"role": "user", "content": data},
+            Message(content=data, role=MessageRole.USER),
         ],
-        response_model=BoolEvalResult,
+        response_type=BoolEvalResult,
+        use_cot=True
     )
     return eval_result

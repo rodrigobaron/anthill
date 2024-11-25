@@ -5,4 +5,4 @@ from pulsar.client import GroqClient
 if __name__ == "__main__":
     groq_client = GroqClient()
 
-    run_demo_loop(client=groq_client, starting_agent=triage_agent)
+    run_demo_loop(client=groq_client, starting_agent=triage_agent, stream=False)

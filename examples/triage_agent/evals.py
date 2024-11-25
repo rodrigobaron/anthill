@@ -1,10 +1,11 @@
-from swarm import Swarm
+from anthill import Anthill
 from agents import triage_agent, sales_agent, refunds_agent
 from evals_util import evaluate_with_llm_bool, BoolEvalResult
 import pytest
 import json
+from pulsar.client import GroqClient
 
-client = Swarm()
+client = Anthill(client=GroqClient())
 
 CONVERSATIONAL_EVAL_SYSTEM_PROMPT = """
 You will be provided with a conversation between a user and an agent, as well as a main goal for the conversation.
@@ -35,17 +36,18 @@ def run_and_get_tool_calls(agent, query):
 
 
 @pytest.mark.parametrize(
-    "query,function_name",
+    "query,function_name,agent_id",
     [
-        ("I want to make a refund!", "transfer_to_refunds"),
-        ("I want to talk to sales.", "transfer_to_sales"),
+        ("I want to make a refund!", "TransferToAgent", 2),
+        ("I want to talk to sales.", "TransferToAgent", 1),
     ],
 )
-def test_triage_agent_calls_correct_function(query, function_name):
+def test_triage_agent_calls_correct_function(query, function_name, agent_id):
     tool_calls = run_and_get_tool_calls(triage_agent, query)
 
     assert len(tool_calls) == 1
-    assert tool_calls[0]["function"]["name"] == function_name
+    assert tool_calls[0]["name"] == function_name
+    assert tool_calls[0]["arguments"]["agent_id"] == agent_id
 
 
 @pytest.mark.parametrize(
