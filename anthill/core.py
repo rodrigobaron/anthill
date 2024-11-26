@@ -66,7 +66,7 @@ class Anthill:
         debug_print(debug, "Getting chat completion for...:", instructions, messages)
 
         if len(agent.functions) > 0:
-            type_agent_functions = Union[tuple(agent.functions)] if len(agent.functions) > 1 else agent.functions
+            type_agent_functions = Union[tuple(agent.functions)] if len(agent.functions) > 1 else agent.functions[0]
             if len(agent.transfers) > 0:
                 response_type = Union[AgentResponse, TransferToAgent, List[type_agent_functions]]
             else:

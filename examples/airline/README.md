@@ -48,8 +48,7 @@ The script 'function_evals.py' will run the evals. Make sure to set `n` to the n
 of times you want to run each particular eval. To run the script from the root airline folder, execute:
 
 ```bash
-cd evals
-python3 function_evals.py
+PYTHONPATH=$PYTHONPATH:$(pwd) python evals/function_evals.py
 ```
 
 The results of these evaluations will be stored in `evals/eval_results/`

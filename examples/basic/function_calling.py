@@ -1,16 +1,19 @@
-from swarm import Swarm, Agent
+from anthill import Anthill, Agent
+from anthill.types import AgentFunction
+from pulsar.client import GroqClient
 
-client = Swarm()
+client = Anthill(client=GroqClient())
 
-
-def get_weather(location) -> str:
-    return "{'temp':67, 'unit':'F'}"
-
+class GetWeather(AgentFunction):
+    location: str
+    def run(self, **kwargs):
+        return "{'temp':67, 'unit':'F'}"
 
 agent = Agent(
     name="Agent",
+    model="llama-3.1-70b-versatile",
     instructions="You are a helpful agent.",
-    functions=[get_weather],
+    functions=[GetWeather],
 )
 
 messages = [{"role": "user", "content": "What's the weather in NYC?"}]

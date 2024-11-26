@@ -1,9 +1,11 @@
-from swarm import Swarm, Agent
+from anthill import Anthill, Agent
+from pulsar.client import GroqClient
 
-client = Swarm()
+client = Anthill(client=GroqClient())
 
 agent = Agent(
     name="Agent",
+    model="llama-3.1-70b-versatile",
     instructions="You are a helpful agent.",
 )
 

@@ -1,24 +1,22 @@
-from swarm import Swarm, Agent
+from anthill import Anthill, Agent
+from pulsar.client import GroqClient
 
-client = Swarm()
+client = Anthill(client=GroqClient())
 
 english_agent = Agent(
     name="English Agent",
+    model="llama-3.1-70b-versatile",
     instructions="You only speak English.",
 )
 
 spanish_agent = Agent(
     name="Spanish Agent",
-    instructions="You only speak Spanish.",
+    model="llama-3.1-70b-versatile",
+    instructions="You only speak Spanish to the user.",
 )
 
 
-def transfer_to_spanish_agent():
-    """Transfer spanish speaking users immediately."""
-    return spanish_agent
-
-
-english_agent.functions.append(transfer_to_spanish_agent)
+english_agent.transfers = [spanish_agent]
 
 messages = [{"role": "user", "content": "Hola. ¿Como estás?"}]
 response = client.run(agent=english_agent, messages=messages)
