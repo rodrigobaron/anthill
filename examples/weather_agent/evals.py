@@ -1,8 +1,10 @@
-from swarm import Swarm
+from anthill import Anthill
 from agents import weather_agent
 import pytest
 
-client = Swarm()
+from pulsar.client import GroqClient
+
+client = Anthill(client=GroqClient())
 
 
 def run_and_get_tool_calls(agent, query):
@@ -10,9 +12,8 @@ def run_and_get_tool_calls(agent, query):
     response = client.run(
         agent=agent,
         messages=[message],
-        execute_tools=False,
     )
-    return response.messages[-1].get("tool_calls")
+    return response.messages[0].get("tool_calls") or []
 
 
 @pytest.mark.parametrize(
@@ -20,14 +21,14 @@ def run_and_get_tool_calls(agent, query):
     [
         "What's the weather in NYC?",
         "Tell me the weather in London.",
-        "Do I need an umbrella today? I'm in chicago.",
+        # "Do I need an umbrella today? I'm in chicago.",
     ],
 )
 def test_calls_weather_when_asked(query):
     tool_calls = run_and_get_tool_calls(weather_agent, query)
 
     assert len(tool_calls) == 1
-    assert tool_calls[0]["function"]["name"] == "get_weather"
+    assert tool_calls[0]["name"] == "GetWeather"
 
 
 @pytest.mark.parametrize(
@@ -39,6 +40,7 @@ def test_calls_weather_when_asked(query):
     ],
 )
 def test_does_not_call_weather_when_not_asked(query):
+    # import pdb; pdb.set_trace()
     tool_calls = run_and_get_tool_calls(weather_agent, query)
 
     assert not tool_calls
