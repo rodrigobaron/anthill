@@ -3,12 +3,12 @@ from agents import triage_agent, sales_agent, refunds_agent
 from evals_util import evaluate_with_llm_bool, BoolEvalResult
 import pytest
 import json
-from pulsar.client import GroqClient
 
-client = Anthill(client=GroqClient())
+
+client = Anthill()
 
 CONVERSATIONAL_EVAL_SYSTEM_PROMPT = """
-You will be provided with a conversation between a user and an agent, as well as a main goal for the conversation.
+You will be provided with a conversation between a user and an agent.
 Your goal is to evaluate, based on the conversation, if the agent achieves the main goal or not.
 
 To assess whether the agent manages to achieve the main goal, consider the instructions present in the main goal, as well as the way the user responds:
@@ -18,9 +18,8 @@ It is possible that the user is not satisfied with the answer, but the agent sti
 
 
 def conversation_was_successful(messages) -> bool:
-    conversation = f"CONVERSATION: {json.dumps(messages)}"
     result: BoolEvalResult = evaluate_with_llm_bool(
-        CONVERSATIONAL_EVAL_SYSTEM_PROMPT, conversation
+        CONVERSATIONAL_EVAL_SYSTEM_PROMPT, messages
     )
     return result.value
 
@@ -56,12 +55,14 @@ def test_triage_agent_calls_correct_function(query, function_name, agent_id):
         [
             {"role": "user", "content": "Who is the lead singer of U2"},
             {"role": "assistant", "content": "Bono is the lead singer of U2."},
+            {"role": "user", "content": "Thank you!"},
         ],
         [
             {"role": "user", "content": "Hello!"},
             {"role": "assistant", "content": "Hi there! How can I assist you today?"},
             {"role": "user", "content": "I want to make a refund."},
-            {"role": "tool", "tool_name": "transfer_to_refunds"},
+            {"role": "tool", "content": "transfer_to_refunds"},
+            {"role": "assistant", "content": "You refund was successful"},
             {"role": "user", "content": "Thank you!"},
             {"role": "assistant", "content": "You're welcome! Have a great day!"},
         ],

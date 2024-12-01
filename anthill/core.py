@@ -2,10 +2,10 @@
 import copy
 import json
 from collections import defaultdict
-from typing import List, Callable, Union
+from typing import List, Optional, Union
 
 # Package/library imports
-from pulsar.client import OpenAiApiLike
+from pulsar.client import Client
 
 # Local imports
 from .util import debug_print
@@ -17,13 +17,16 @@ from .types import (
     Response,
     Result,
 )
-# import logging
-# logging.basicConfig(level=logging.DEBUG)
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
 
 class Anthill:
-    def __init__(self, client: OpenAiApiLike):
+    def __init__(self, client = None):
+        if client is None:
+            client = Client()
+
         self.client = client
 
     def get_chat_completion(
@@ -42,13 +45,13 @@ class Anthill:
             else agent.instructions
         )
         agent_list = [f"{k+1}: {t_agent.name}" for k, t_agent in enumerate(agent.transfers)]
-        instructions = f"Your are {agent.name}. \n## INSTRUCTIONS\n{instructions}\n\n## NOT ALLAOWED\n- Make assumptions\n- Use placeholders\n\n"
+        instructions = f"Your are {agent.name}. You must use AgentResponse to answer/ask to user. \n## INSTRUCTIONS\n{instructions}\n\n## NOT ALLAOWED\n- Make assumptions\n- Use placeholders\n\n"
 
         tools_map = [{f.__name__: f.__doc__} for f in agent.functions]
         if len(agent_list) > 0:
             agent_list_inst = "\n".join(agent_list)
             instructions = f"{instructions}\n## TEAM AGENTS\n You are part of a teams of Agents (agent_id: name):\n{agent_list_inst}"
-            tools_map.append({"TransferToAgent": "Tranfer to team Agent"})
+            tools_map.append({"TransferToAgent": "Tranfer to team Agent, use this tool right way you found necessary without acknowledge the user's"})
         
         if len(tools_map) > 0:
             tool_list_inst = "\n".join([f"{k}: {v}" for t in tools_map for k, v in t.items()])
@@ -83,8 +86,7 @@ class Anthill:
             "system": instructions,
             "response_type": response_type,
             "stream": stream,
-            "use_cot": True,
-            "temperature": 0.1
+            "temperature": 0.1,
         }
         response = self.client.chat_completion(**create_params)
         if stream:

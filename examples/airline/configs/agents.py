@@ -18,13 +18,13 @@ def triage_instructions(context_variables):
 
 triage_agent = Agent(
     name="Triage Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions=triage_instructions,
 )
 
 flight_modification = Agent(
     name="Flight Modification Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions="""You are a Flight Modification Agent for a customer service airlines company.
       You are an expert customer service agent deciding which sub intent the user should be referred to.
 You already know the intent is for flight modification related question. First, look at message history and see if you can determine if the user wants to cancel or change their flight.
@@ -33,7 +33,7 @@ Ask user clarifying questions until you know whether or not it is a cancel reque
 
 flight_cancel = Agent(
     name="Flight cancel traversal",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions=STARTER_PROMPT + FLIGHT_CANCELLATION_POLICY,
     functions=[
         EscalateToAgent,
@@ -45,7 +45,7 @@ flight_cancel = Agent(
 
 flight_change = Agent(
     name="Flight change traversal",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions=STARTER_PROMPT + FLIGHT_CHANGE_POLICY,
     functions=[
         EscalateToAgent,
@@ -57,7 +57,7 @@ flight_change = Agent(
 
 lost_baggage = Agent(
     name="Lost baggage traversal",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions=STARTER_PROMPT + LOST_BAGGAGE_POLICY,
     functions=[
         EscalateToAgent,

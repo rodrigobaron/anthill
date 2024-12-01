@@ -1,8 +1,7 @@
 from anthill import Anthill, Agent
 from anthill.types import AgentFunction
-from pulsar.client import GroqClient
 
-client = Anthill(client=GroqClient())
+client = Anthill()
 
 class GetWeather(AgentFunction):
     location: str
@@ -11,7 +10,7 @@ class GetWeather(AgentFunction):
 
 agent = Agent(
     name="Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions="You are a helpful agent.",
     functions=[GetWeather],
 )

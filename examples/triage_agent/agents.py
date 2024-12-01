@@ -25,17 +25,17 @@ class ApplyDiscount(AgentFunction):
 
 triage_agent = Agent(
     name="Triage Agent",
-    model="llama-3.1-70b-versatile",
-    instructions="Determine which agent is best suited to handle the user's request, and transfer the conversation to that agent.",
+    model="groq/llama-3.1-70b-versatile",
+    instructions="- Determine which agent is best suited to handle the user's request, and transfer the conversation to that agent\n- If no agent is suited you can aswer the user",
 )
 sales_agent = Agent(
     name="Sales Agent",
-    model="llama-3.1-70b-versatile",
-    instructions="Be super enthusiastic about selling bees.",
+    model="groq/llama-3.1-70b-versatile",
+    instructions="Be super enthusiastic about selling bees. Anything else than sales is not up to you.",
 )
 refunds_agent = Agent(
     name="Refunds Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions="Help the user with a refund. If the reason is that it was too expensive, offer the user a refund code. If they insist, then process the refund. If have any question just ask to user.",
     functions=[ProcessRefund, ApplyDiscount],
 )

@@ -1,8 +1,7 @@
 from anthill import Anthill, Agent
 from anthill.types import AgentFunction
-from pulsar.client import GroqClient
 
-client = Anthill(client=GroqClient())
+client = Anthill()
 
 
 def instructions(context_variables):
@@ -21,7 +20,7 @@ class PrintAccountDetails(AgentFunction):
 
 agent = Agent(
     name="Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions=instructions,
     functions=[PrintAccountDetails],
 )

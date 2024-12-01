@@ -59,9 +59,9 @@ def pretty_print_messages(messages) -> None:
 
 
 def run_demo_loop(
-    client, starting_agent, context_variables=None, stream=False, debug=False
+    starting_agent, client=None, context_variables=None, stream=False, debug=False
 ) -> None:
-    client = Anthill(client=client)
+    ant_client = Anthill(client=client)
     print("Starting Anthill CLI 🐝")
 
     messages = []
@@ -71,7 +71,7 @@ def run_demo_loop(
         user_input = input("\033[90mUser\033[0m: ")
         messages.append({"role": "user", "content": user_input})
 
-        response = client.run(
+        response = ant_client.run(
             agent=agent,
             messages=messages,
             context_variables=context_variables or {},

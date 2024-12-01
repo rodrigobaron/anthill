@@ -26,7 +26,7 @@ class SendEmail(AgentFunction):
 
 weather_agent = Agent(
     name="Weather Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions="You are a helpful agent which help user with weather. Answer the user about weather or just say: I DO NOT KNOW!",
     functions=[GetWeather, SendEmail],
 )

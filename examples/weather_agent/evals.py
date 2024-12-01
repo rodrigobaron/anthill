@@ -2,9 +2,7 @@ from anthill import Anthill
 from agents import weather_agent
 import pytest
 
-from pulsar.client import GroqClient
-
-client = Anthill(client=GroqClient())
+client = Anthill()
 
 
 def run_and_get_tool_calls(agent, query):

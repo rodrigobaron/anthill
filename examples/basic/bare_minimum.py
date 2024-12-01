@@ -1,11 +1,10 @@
 from anthill import Anthill, Agent
-from pulsar.client import GroqClient
 
-client = Anthill(client=GroqClient())
+client = Anthill()
 
 agent = Agent(
     name="Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions="You are a helpful agent.",
 )
 

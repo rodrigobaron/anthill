@@ -1,7 +1,6 @@
 import datetime
 import json
 import uuid
-from pulsar.client import GroqClient
 
 from anthill import Anthill
 
@@ -11,7 +10,7 @@ def run_function_evals(agent, test_cases, n=1, eval_path=None):
     results = []
     eval_id = str(uuid.uuid4())
     eval_timestamp = datetime.datetime.now().isoformat()
-    client = Anthill(client=GroqClient())
+    client = Anthill()
 
     for test_case in test_cases:
 

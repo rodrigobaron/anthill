@@ -1,17 +1,16 @@
 from anthill import Anthill, Agent
-from pulsar.client import GroqClient
 
-client = Anthill(client=GroqClient())
+client = Anthill()
 
 english_agent = Agent(
     name="English Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions="You only speak English.",
 )
 
 spanish_agent = Agent(
     name="Spanish Agent",
-    model="llama-3.1-70b-versatile",
+    model="groq/llama-3.1-70b-versatile",
     instructions="You only speak Spanish to the user.",
 )
 
