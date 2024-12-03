@@ -62,7 +62,7 @@ def run_demo_loop(
     starting_agent, client=None, context_variables=None, stream=False, debug=False
 ) -> None:
     ant_client = Anthill(client=client)
-    print("Starting Anthill CLI 🐝")
+    print("Starting Anthill CLI 🐜")
 
     messages = []
     agent = starting_agent
