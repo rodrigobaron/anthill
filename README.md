@@ -25,15 +25,12 @@ from anthill import Anthill, Agent
 
 client = Anthill()
 
-def transfer_to_agent_b():
-    return agent_b
-
 
 agent_a = Agent(
    name="Agent A",
    instructions="You are a helpful agent.",
    model="groq/llama-3.1-70b-versatile",
-   functions=[transfer_to_agent_b],
+   transfers=[agent_b],
 )
 
 agent_b = Agent(
@@ -78,10 +75,9 @@ These primitives are powerful enough to express rich dynamics between tools and 
 
 ## Why Anthill
 
-[TODO]
-Swarm explores patterns that are lightweight, scalable, and highly customizable by design. Approaches similar to Swarm are best suited for situations dealing with a large number of independent capabilities and instructions that are difficult to encode into a single prompt.
+Anthill explores patterns that are lightweight, scalable, and highly customizable by design. Approaches similar to Anthill are best suited for situations dealing with a large number of independent capabilities and instructions that are difficult to encode into a single prompt.
 
-The Assistants API is a great option for developers looking for fully-hosted threads and built in memory management and retrieval. However, Swarm is an educational resource for developers curious to learn about multi-agent orchestration. Swarm runs (almost) entirely on the client and, much like the Chat Completions API, does not store state between calls.
+The Assistants API is a great option for developers looking for fully-hosted threads and built in memory management and retrieval. However, Anthill is an educational resource for developers curious to learn about multi-agent orchestration. Anthill runs (almost) entirely on the client and, much like the Chat Completions API, does not store state between calls.
 
 # Examples
 
@@ -110,10 +106,9 @@ client = Anthill()
 
 ### `client.run()`
 
-[TODO]  
-Anthill's `run()` function is analogous to the `chat.completions.create()` function in the Chat Completions API – it takes `messages` and returns `messages` and saves no state between calls. Importantly, however, it also handles Agent function execution, hand-offs, context variable references, and can take multiple turns before returning to the user.
+Anthill's `run()` function is analogous to the `chat.completions.create()` function in the Chat Completions API – it takes `messages` and returns `messages` and saves no state between calls. Importantly, however, it also handles Agent tool execution, hand-offs, context variable references, and can take multiple turns before returning to the user.
 
-At its core, Swarm's `client.run()` implements the following loop:
+At its core, Anthill's `client.run()` implements the following loop:
 
 1. Get a completion from the current Agent
 2. Execute tool calls and append results
@@ -122,7 +117,6 @@ At its core, Swarm's `client.run()` implements the following loop:
 5. If no new tool calls, return
 
 #### Arguments
-[TODO]
 
 | Argument              | Type    | Description                                                                                                                                            | Default        |
 | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
@@ -135,7 +129,7 @@ At its core, Swarm's `client.run()` implements the following loop:
 | **stream**            | `bool`  | If `True`, enables streaming responses                                                                                                                 | `False`        |
 | **debug**             | `bool`  | If `True`, enables debug logging                                                                                                                       | `False`        |
 
-Once `client.run()` is finished (after potentially multiple calls to agents and tools) it will return a `Response` containing all the relevant updated state. Specifically, the new `messages`, the last `Agent` to be called, and the most up-to-date `context_variables`. You can pass these values (plus new user messages) in to your next execution of `client.run()` to continue the interaction where it left off – much like `chat.completions.create()`. (The `run_demo_loop` function implements an example of a full execution loop in `/swarm/repl/repl.py`.)
+Once `client.run()` is finished (after potentially multiple calls to agents and tools) it will return a `Response` containing all the relevant updated state. Specifically, the new `messages`, the last `Agent` to be called, and the most up-to-date `context_variables`. You can pass these values (plus new user messages) in to your next execution of `client.run()` to continue the interaction where it left off – much like `chat.completions.create()`. (The `run_demo_loop` function implements an example of a full execution loop in `/anthill/repl/repl.py`.)
 
 #### `Response` Fields
 
@@ -147,23 +141,19 @@ Once `client.run()` is finished (after potentially multiple calls to agents and 
 
 ## Agents
 
-[TODO]
-
 An `Agent` simply encapsulates a set of `instructions` with a set of `functions` (plus some additional settings below), and has the capability to hand off execution to another `Agent`.
 
 While it's tempting to personify an `Agent` as "someone who does X", it can also be used to represent a very specific workflow or step defined by a set of `instructions` and `functions` (e.g. a set of steps, a complex retrieval, single step of data transformation, etc). This allows `Agent`s to be composed into a network of "agents", "workflows", and "tasks", all represented by the same primitive.
 
 ## `Agent` Fields
 
-[TODO]
-
 | Field            | Type                     | Description                                                                   | Default                      |
 | ---------------- | ------------------------ | ----------------------------------------------------------------------------- | ---------------------------- |
 | **name**         | `str`                    | The name of the agent.                                                        | `"Agent"`                    |
-| **model**        | `str`                    | The model to be used by the agent.                                            | `"gpt-4o"`                   |
+| **model**        | `str`                    | The model to be used by the agent.                                            | `None`                   |
 | **instructions** | `str` or `func() -> str` | Instructions for the agent, can be a string or a callable returning a string. | `"You are a helpful agent."` |
 | **functions**    | `List`                   | A list of functions that the agent can call.                                  | `[]`                         |
-| **tool_choice**  | `str`                    | The tool choice for the agent, if any.                                        | `None`                       |
+| **transfers**    | `List`                   | The agent list which can transfer to.                                         | `[]`                       |
 
 ### Instructions
 
@@ -199,20 +189,23 @@ Hi John, how can I assist you today?
 
 ## Functions
 
-- Swarm `Agent`s can call python functions directly.
+- Anthill `Agent`s can call python functions directly.
 - Function should usually return a `str` (values will be attempted to be cast as a `str`).
 - If a function returns an `Agent`, execution will be transferred to that `Agent`.
 - If a function defines a `context_variables` parameter, it will be populated by the `context_variables` passed into `client.run()`.
 
 ```python
-def greet(context_variables, language):
-   user_name = context_variables["user_name"]
-   greeting = "Hola" if language.lower() == "spanish" else "Hello"
-   print(f"{greeting}, {user_name}!")
-   return "Done"
+class Greet(AgentFunction):
+   language: str
+
+   def run(self, **kwargs):
+      user_name = kwargs['context_variables']["user_name"]
+      greeting = "Hola" if self.language.lower() == "spanish" else "Hello"
+      print(f"{greeting}, {user_name}!")
+      return "Done"
 
 agent = Agent(
-   functions=[greet]
+   functions=[Greet]
 )
 
 client.run(
@@ -231,15 +224,12 @@ Hola, John!
 
 ### Handoffs and Updating Context Variables
 
-An `Agent` can hand off to another `Agent` by returning it in a `function`.
+An `Agent` can hand off to another `Agent` by adding it to `transfers`.
 
 ```python
 sales_agent = Agent(name="Sales Agent")
 
-def transfer_to_sales():
-   return sales_agent
-
-agent = Agent(functions=[transfer_to_sales])
+agent = Agent(tranfers=[sales_agent])
 
 response = client.run(agent, [{"role":"user", "content":"Transfer me to sales."}])
 print(response.agent.name)
@@ -254,15 +244,18 @@ It can also update the `context_variables` by returning a more complete `Result`
 ```python
 sales_agent = Agent(name="Sales Agent")
 
-def talk_to_sales():
-   print("Hello, World!")
-   return Result(
-       value="Done",
-       agent=sales_agent,
-       context_variables={"department": "sales"}
-   )
+class TalkToSales(AgentFunction):
+   department: str
 
-agent = Agent(functions=[talk_to_sales])
+   def run(self, **kwargs):
+      print("Hello, World!")
+      return Result(
+         value="Done",
+         agent=sales_agent,
+         context_variables={"department": self.department}
+      )
+
+agent = Agent(functions=[TalkToSales])
 
 response = client.run(
    agent=agent,
@@ -283,15 +276,15 @@ Sales Agent
 
 ### Function Schemas
 
-Swarm automatically converts functions into a JSON Schema that is passed into Chat Completions `tools`.
+Anthill automatically converts class tools into a JSON Schema that is passed into Chat Completions prompt.
 
 - Docstrings are turned into the function `description`.
-- Parameters without default values are set to `required`.
+- Parameters without optional and default values are set to `required`.
 - Type hints are mapped to the parameter's `type` (and default to `string`).
-- Per-parameter descriptions are not explicitly supported, but should work similarly if just added in the docstring. (In the future docstring argument parsing may be added.)
+- Per-parameter descriptions are supported, by using pydantic fields.
 
 ```python
-def greet(name, age: int, location: str = "New York"):
+class Greet(AgentFunction):
    """Greets the user. Make sure to get their name and age before calling.
 
    Args:
@@ -299,26 +292,14 @@ def greet(name, age: int, location: str = "New York"):
       age: Age of the user.
       location: Best place on earth.
    """
-   print(f"Hello {name}, glad you are {age} in {location}!")
-```
+   name: str
+   age: int
+   location: str = "New York"
 
-```javascript
-{
-   "type": "function",
-   "function": {
-      "name": "greet",
-      "description": "Greets the user. Make sure to get their name and age before calling.\n\nArgs:\n   name: Name of the user.\n   age: Age of the user.\n   location: Best place on earth.",
-      "parameters": {
-         "type": "object",
-         "properties": {
-            "name": {"type": "string"},
-            "age": {"type": "integer"},
-            "location": {"type": "string"}
-         },
-         "required": ["name", "age"]
-      }
-   }
-}
+   def run(self, **kwargs):
+      result = f"Hello {self.name}, glad you are {self.age} in {self.location}!"
+      print(result)
+      return result
 ```
 
 ## Streaming
@@ -329,7 +310,7 @@ for chunk in stream:
    print(chunk)
 ```
 
-Uses the same events as [Chat Completions API streaming](https://platform.openai.com/docs/api-reference/streaming). See `process_and_print_streaming_response` in `/swarm/repl/repl.py` as an example.
+Uses the same events as [Chat Completions API streaming](https://platform.openai.com/docs/api-reference/streaming). See `process_and_print_streaming_response` in `/anthill/repl/repl.py` as an example.
 
 Two new event types have been added:
 
@@ -338,14 +319,14 @@ Two new event types have been added:
 
 # Evaluations
 
-Evaluations are crucial to any project, and we encourage developers to bring their own eval suites to test the performance of their swarms. For reference, we have some examples for how to eval swarm in the `airline`, `weather_agent` and `triage_agent` quickstart examples. See the READMEs for more details.
+Evaluations are crucial to any project, and we encourage developers to bring their own eval suites to test the performance of their anthill's. For reference, we have some examples for how to eval anthill in the `airline`, `weather_agent` and `triage_agent` quickstart examples. See the READMEs for more details.
 
 # Utils
 
-Use the `run_demo_loop` to test out your swarm! This will run a REPL on your command line. Supports streaming.
+Use the `run_demo_loop` to test out your anthill! This will run a REPL on your command line. Supports streaming.
 
 ```python
-from swarm.repl import run_demo_loop
+from anthill.repl import run_demo_loop
 ...
 run_demo_loop(agent, stream=True)
 ```
