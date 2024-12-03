@@ -22,9 +22,11 @@ class TransferToAgent(BaseModel):
 class Agent(BaseModel):
     name: str = "Agent"
     model: str
-    instructions: Union[str, Callable[[], str]] = "You are a helpful agent."
+    instructions: Union[str, List, Callable[[], str]
+                        ] = "You are a helpful agent."
     functions: List = []
     transfers: List["Agent"] = []
+    model_params: Optional[dict] = {}
 
 
 class Message(BaseModel):

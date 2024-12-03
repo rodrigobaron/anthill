@@ -6,9 +6,11 @@ from typing import List, Optional, Union
 
 # Package/library imports
 from pulsar.client import Client
+from pulsar.prompt import PLAN_PROMPT
 
 # Local imports
 from .util import debug_print
+from .prompt import build_prompt
 from .types import (
     Agent,
     AgentResponse,
@@ -17,13 +19,14 @@ from .types import (
     Response,
     Result,
 )
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 __CTX_VARS_NAME__ = "context_variables"
 
+
 class Anthill:
-    def __init__(self, client = None):
+    def __init__(self, client=None):
         if client is None:
             client = Client()
 
@@ -44,19 +47,21 @@ class Anthill:
             if callable(agent.instructions)
             else agent.instructions
         )
-        agent_list = [f"{k+1}: {t_agent.name}" for k, t_agent in enumerate(agent.transfers)]
-        instructions = f"Your are {agent.name}. You must use AgentResponse to answer/ask to user. \n## INSTRUCTIONS\n{instructions}\n\n## NOT ALLAOWED\n- Make assumptions\n- Use placeholders\n\n"
+        instructions = "\n".join(
+            [f"- {i}" for i in instructions]) if isinstance(instructions, list) else instructions
+        agent_list = [{"id": k + 1, "name": t_agent.name}
+                      for k, t_agent in enumerate(agent.transfers)]
+        tool_list = [{"name": f.__name__, "doc": f.__doc__}
+                     for f in agent.functions]
 
-        tools_map = [{f.__name__: f.__doc__} for f in agent.functions]
         if len(agent_list) > 0:
-            agent_list_inst = "\n".join(agent_list)
-            instructions = f"{instructions}\n## TEAM AGENTS\n You are part of a teams of Agents (agent_id: name):\n{agent_list_inst}"
-            tools_map.append({"TransferToAgent": "Tranfer to team Agent, use this tool right way you found necessary without acknowledge the user's"})
-        
-        if len(tools_map) > 0:
-            tool_list_inst = "\n".join([f"{k}: {v}" for t in tools_map for k, v in t.items()])
-            instructions = f"{instructions}\n## TOOLS \n{tool_list_inst}"
+            tool_list.append(
+                {
+                    "name": "TransferToAgent",
+                    "doc": "Tranfer to team Agent, use this tool right way you found necessary without acknowledge the user's"})
 
+        system_prompt = build_prompt(
+            agent.name, instructions, agent_list, tool_list)
         messages = []
         for h in history:
             if h["content"] is not None:
@@ -65,44 +70,55 @@ class Anthill:
             for t in tool_calls:
                 tool = t["arguments"]
                 messages.append(dict(role=h["role"], content=str(tool)))
-            
-        debug_print(debug, "Getting chat completion for...:", instructions, messages)
+
+        debug_print(
+            debug,
+            "Getting chat completion for...:",
+            system_prompt,
+            messages)
 
         if len(agent.functions) > 0:
-            type_agent_functions = Union[tuple(agent.functions)] if len(agent.functions) > 1 else agent.functions[0]
+            type_agent_functions = Union[tuple(agent.functions)] if len(
+                agent.functions) > 1 else agent.functions[0]
             if len(agent.transfers) > 0:
-                response_type = Union[AgentResponse, TransferToAgent, List[type_agent_functions]]
+                response_type = Union[AgentResponse,
+                                      TransferToAgent, List[type_agent_functions]]
             else:
-                response_type = Union[AgentResponse, List[type_agent_functions]]
+                response_type = Union[AgentResponse,
+                                      List[type_agent_functions]]
         else:
             if len(agent.transfers) > 0:
                 response_type = Union[AgentResponse, TransferToAgent]
             else:
                 response_type = AgentResponse
-        
+
         create_params = {
             "model": model_override or agent.model,
             "messages": messages,
-            "system": instructions,
+            "system": system_prompt,
             "response_type": response_type,
             "stream": stream,
-            "temperature": 0.1,
+            "prompt_template": PLAN_PROMPT,
+            **agent.model_params
         }
         response = self.client.chat_completion(**create_params)
         if stream:
             return response
         return self._make_message(response, agent)
-    
+
     def _make_message(self, response, agent):
         if response is None:
             return Message(sender=agent.name, role="assistant", content=None)
-        
+
         if isinstance(response, AgentResponse):
-            return Message(sender=agent.name, role="assistant", content=response.content)
-        
+            return Message(sender=agent.name, role="assistant",
+                           content=response.content)
+
         response = response if isinstance(response, list) else [response]
-        response = [{"name": r.__class__.__name__, "arguments": r} for r in response]
-        return Message(sender=agent.name, role="assistant", tool_calls=response)
+        response = [{"name": r.__class__.__name__, "arguments": r}
+                    for r in response]
+        return Message(sender=agent.name, role="assistant",
+                       tool_calls=response)
 
     def handle_function_result(self, result, debug) -> Result:
         match result:
@@ -119,7 +135,8 @@ class Anthill:
                 try:
                     return Result(value=str(result))
                 except Exception as e:
-                    error_message = f"Failed to cast response to string: {result}. Make sure agent functions return a string or Result object. Error: {str(e)}"
+                    error_message = f"Failed to cast response to string: {result}. Make sure agent functions return a string or Result object. Error: {
+                        str(e)}"
                     debug_print(debug, error_message)
                     raise TypeError(error_message)
 
@@ -136,14 +153,14 @@ class Anthill:
         for tool_call in tool_calls:
             name = tool_call["name"]
             func = tool_call["arguments"]
-            
+
             if isinstance(func, TransferToAgent):
-                raw_result = current_agent.transfers[func.agent_id-1]
+                raw_result = current_agent.transfers[func.agent_id - 1]
             else:
                 raw_result = func.run(context_variables=context_variables)
 
             result: Result = self.handle_function_result(raw_result, debug)
-            
+
             partial_response.messages.append(
                 {
                     "role": "tool",
@@ -199,7 +216,8 @@ class Anthill:
                 debug_print(debug, "Ending turn.")
                 break
 
-            # handle function calls, updating context_variables, and switching agents
+            # handle function calls, updating context_variables, and switching
+            # agents
             partial_response = self.handle_tool_calls(
                 message.tool_calls, active_agent, context_variables, debug
             )
@@ -263,7 +281,8 @@ class Anthill:
                 debug_print(debug, "Ending turn.")
                 break
 
-            # handle function calls, updating context_variables, and switching agents
+            # handle function calls, updating context_variables, and switching
+            # agents
             partial_response = self.handle_tool_calls(
                 message.tool_calls, active_agent, context_variables, debug
             )
