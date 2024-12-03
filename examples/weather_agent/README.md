@@ -1,10 +1,10 @@
 # Weather agent
 
-This example is a weather agent demonstrating function calling with a single agent. The agent has tools to get the weather of a particular city, and send an email.
+This example is a weather agent demonstrating tool calling with a single agent. The agent has tools to get the weather of a particular city, and send an email.
 
 ## Setup
 
-To run the weather agent Swarm:
+To run the weather agent Anthill:
 
 1. Run
 

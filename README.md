@@ -87,9 +87,9 @@ The Assistants API is a great option for developers looking for fully-hosted thr
 
 Check out `/examples` for inspiration! Learn more about each one in its README.
 
-- [`basic`](examples/basic): Simple examples of fundamentals like setup, function calling, handoffs, and context variables
+- [`basic`](examples/basic): Simple examples of fundamentals like setup, tool calling, handoffs, and context variables
 - [`triage_agent`](examples/triage_agent): Simple example of setting up a basic triage step to hand off to the right agent
-- [`weather_agent`](examples/weather_agent): Simple example of function calling
+- [`weather_agent`](examples/weather_agent): Simple example of tool calling
 - [`airline`](examples/airline): A multi-agent setup for handling different customer service requests in an airline context.
 - [`support_bot`](examples/support_bot): A customer service bot which includes a user interface agent and a help center agent with several tools
 - [`personal_shopper`](examples/personal_shopper): A personal shopping agent that can help with making sales and refunding orders
@@ -119,7 +119,7 @@ At its core, Swarm's `client.run()` implements the following loop:
 2. Execute tool calls and append results
 3. Switch Agent if necessary
 4. Update context variables, if necessary
-5. If no new function calls, return
+5. If no new tool calls, return
 
 #### Arguments
 [TODO]
@@ -226,7 +226,7 @@ client.run(
 Hola, John!
 ```
 
-- If an `Agent` function call has an error (missing function, wrong argument, error) an error response will be appended to the chat so the `Agent` can recover gracefully.
+- If an `Agent` tool call has an error (missing function, wrong argument, error) an error response will be appended to the chat so the `Agent` can recover gracefully.
 - If multiple functions are called by the `Agent`, they will be executed in that order.
 
 ### Handoffs and Updating Context Variables
@@ -333,7 +333,7 @@ Uses the same events as [Chat Completions API streaming](https://platform.openai
 
 Two new event types have been added:
 
-- `{"delim":"start"}` and `{"delim":"end"}`, to signal each time an `Agent` handles a single message (response or function call). This helps identify switches between `Agent`s.
+- `{"delim":"start"}` and `{"delim":"end"}`, to signal each time an `Agent` handles a single message (response or tool call). This helps identify switches between `Agent`s.
 - `{"response": Response}` will return a `Response` object at the end of a stream with the aggregated (complete) response, for convenience.
 
 # Evaluations
@@ -353,5 +353,3 @@ run_demo_loop(agent, stream=True)
 # References
 
 - [OpenAI Swarm](https://github.com/openai/swarm)
-- [LiteLLM](https://github.com/BerriAI/litellm)
-- [G1](https://github.com/bklieger-groq/g1)

@@ -1,6 +1,6 @@
-# Swarm basic
+# Anthill basic
 
-This folder contains basic examples demonstrating core Swarm capabilities. These examples show the simplest implementations of Swarm, with one input message, and a corresponding output. The `simple_loop_no_helpers` has a while loop to demonstrate how to create an interactive Swarm session.
+This folder contains basic examples demonstrating core Anthill capabilities. These examples show the simplest implementations of Anthill, with one input message, and a corresponding output. The `simple_loop_no_helpers` has a while loop to demonstrate how to create an interactive Anthill session.
 
 ### Examples
 

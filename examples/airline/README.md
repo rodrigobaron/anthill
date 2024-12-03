@@ -1,7 +1,7 @@
 # Airline customer service
 
-This example demonstrates a multi-agent setup for handling different customer service requests in an airline context using the Swarm framework. The agents can triage requests, handle flight modifications, cancellations, and lost baggage cases.
-This example uses the helper function `run_demo_loop`, which allows us to create an interactive Swarm session.
+This example demonstrates a multi-agent setup for handling different customer service requests in an airline context using the Anthill framework. The agents can triage requests, handle flight modifications, cancellations, and lost baggage cases.
+This example uses the helper function `run_demo_loop`, which allows us to create an interactive Anthill session.
 
 ## Agents
 
@@ -13,7 +13,7 @@ This example uses the helper function `run_demo_loop`, which allows us to create
 
 ## Setup
 
-Once you have installed dependencies and Swarm, run the example using:
+Once you have installed dependencies and Anthill, run the example using:
 
 ```shell
 python3 main.py
@@ -24,7 +24,7 @@ python3 main.py
 > [!NOTE]
 > These evals are intended to be examples to demonstrate functionality, but will have to be updated and catered to your particular use case.
 
-For this example, we run function evals, where we input a conversation, and the expected function call ('None' if no function call is expected).
+For this example, we run function evals, where we input a conversation, and the expected tool call ('None' if no tool call is expected).
 The evaluation cases are stored in `eval/eval_cases/` subfolder.
 
 ```json
