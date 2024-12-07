@@ -3,56 +3,25 @@ import json
 import argparse
 from anthill import Anthill
 from anthill.types import Message, Agent
+import base64
+import dill
 
-class AgentRegistry:
-    """Keep track of all agents to handle circular references"""
-    def __init__(self):
-        self.agents = {}
+def deserialize_agent(agent_json):
+    data = json.loads(agent_json)
     
-    def register(self, agent):
-        self.agents[agent.name] = agent
-        return agent
+    # Deserialize functions
+    functions = []
+    for func_data in data['functions']:
+        func = dill.loads(base64.b64decode(func_data['serialized']))
+        functions.append(func)
     
-    def get(self, name):
-        return self.agents.get(name)
-
-def deserialize_agent(agent_json, registry=None):
-    """
-    Deserialize a JSON string back to an Agent object, handling circular references.
-    
-    Args:
-        agent_json: JSON string or agent name
-        registry: AgentRegistry instance to track created agents
-    """
-    if registry is None:
-        registry = AgentRegistry()
-    
-    # If it's just a name, return the registered agent
-    try:
-        data = json.loads(agent_json)
-    except json.JSONDecodeError:
-        # This must be an agent name reference
-        return registry.get(agent_json)
-    
-    # Check if we already created this agent
-    if data['name'] in registry.agents:
-        return registry.get(data['name'])
-    
-    # Create new Agent instance
     agent = Agent(
         name=data['name'],
         model=data['model'],
         instructions=data['instructions'],
-        functions=[],  # Handle functions as needed
-        transfers=[],  # We'll set transfers after creating the agent
+        functions=functions,
         model_params=data['model_params']
     )
-    
-    # Register the agent before processing transfers to handle circular refs
-    registry.register(agent)
-    
-    # Now process transfers
-    agent.transfers = [deserialize_agent(a, registry) for a in data['transfers']]
     
     return agent
 
@@ -112,30 +81,25 @@ def main():
             debug=args.debug
         )
         
-        
-        # Process streaming response
-        content = ""
         response_data = None
-        for chunk in response:
-            if isinstance(chunk, Message):
-                if chunk.sender and content == "":
-                    content = f"{chunk.sender}: "
-                if chunk.content:
-                    content += chunk.content
-                    with st.chat_message("assistant"):
-                        st.write(content)
-                
-                for tool_call in chunk.tool_calls or []:
-                    with st.chat_message("assistant"):
+        with st.chat_message("assistant"):
+            tool_placeholder = st.empty()
+            content_placeholder = st.empty()
+            tool_calls = []
+            for chunk in response:
+                if isinstance(chunk, Message):
+                    if chunk.content:
+                        content_placeholder.write(f"{chunk.sender}: {chunk.content}")
+                    
+                    for tool_call in chunk.tool_calls or []:
                         name, tool_args = tool_call["name"], tool_call["arguments"]
-                        arg_str = tool_args.model_dump_json().replace(":", "=")
-                        st.info(f"{name}({arg_str[1:-1]})")
-                        if name == "TransferToAgent":
-                            content = ""
-            
-            if "response" in chunk:
-                response_data = chunk["response"]
-                break
+                        arg_str = json.dumps(tool_args).replace(":", "=")
+                        tool_calls.append(f"{name}({arg_str[1:-1]})")
+                        tool_placeholder.info(tool_calls)
+                
+                if "response" in chunk:
+                    response_data = chunk["response"]
+                    break
         
         if response_data:
             st.session_state.messages.extend(response_data.messages)

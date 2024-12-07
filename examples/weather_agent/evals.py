@@ -26,7 +26,7 @@ def test_calls_weather_when_asked(query):
     tool_calls = run_and_get_tool_calls(weather_agent, query)
 
     assert len(tool_calls) == 1
-    assert tool_calls[0]["name"] == "GetWeather"
+    assert tool_calls[0]["name"] == "get_weather"
 
 
 @pytest.mark.parametrize(
@@ -38,7 +38,6 @@ def test_calls_weather_when_asked(query):
     ],
 )
 def test_does_not_call_weather_when_not_asked(query):
-    # import pdb; pdb.set_trace()
     tool_calls = run_and_get_tool_calls(weather_agent, query)
 
     assert not tool_calls

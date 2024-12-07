@@ -13,7 +13,7 @@ class BoolEvalResult(BaseModel):
 
 def evaluate_with_llm_bool(instruction, data) -> BoolEvalResult:
     eval_result = __client.chat_completion(
-        model="groq/llama-3.1-70b-versatile",
+        model="groq/llama-3.3-70b-versatile",
         system=instruction,
         messages=data,
         response_type=BoolEvalResult,

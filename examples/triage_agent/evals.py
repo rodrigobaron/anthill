@@ -4,7 +4,6 @@ from evals_util import evaluate_with_llm_bool, BoolEvalResult
 import pytest
 import json
 
-
 client = Anthill()
 
 CONVERSATIONAL_EVAL_SYSTEM_PROMPT = """
@@ -35,18 +34,17 @@ def run_and_get_tool_calls(agent, query):
 
 
 @pytest.mark.parametrize(
-    "query,function_name,agent_id",
+    "query,function_name",
     [
-        ("I want to make a refund!", "TransferToAgent", 2),
-        ("I want to talk to sales.", "TransferToAgent", 1),
+        ("I want to make a refund!", "transfer_to_refunds"),
+        ("I want to talk to sales.", "transfer_to_sales"),
     ],
 )
-def test_triage_agent_calls_correct_function(query, function_name, agent_id):
+def test_triage_agent_calls_correct_function(query, function_name):
     tool_calls = run_and_get_tool_calls(triage_agent, query)
 
     assert len(tool_calls) == 1
     assert tool_calls[0]["name"] == function_name
-    assert tool_calls[0]["arguments"]["agent_id"] == agent_id
 
 
 @pytest.mark.parametrize(
@@ -55,14 +53,13 @@ def test_triage_agent_calls_correct_function(query, function_name, agent_id):
         [
             {"role": "user", "content": "Who is the lead singer of U2"},
             {"role": "assistant", "content": "Bono is the lead singer of U2."},
-            {"role": "user", "content": "Thank you!"},
         ],
         [
             {"role": "user", "content": "Hello!"},
             {"role": "assistant", "content": "Hi there! How can I assist you today?"},
             {"role": "user", "content": "I want to make a refund."},
-            {"role": "tool", "content": "transfer_to_refunds"},
-            {"role": "assistant", "content": "You refund was successful"},
+            {"role": "tool", "tool_name": "transfer_to_refunds", "content": "Current agent: Refunds Agent"},
+            {"role": "assistant", "content": "Your refund as placed"},
             {"role": "user", "content": "Thank you!"},
             {"role": "assistant", "content": "You're welcome! Have a great day!"},
         ],

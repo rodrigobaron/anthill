@@ -3,96 +3,81 @@ import random
 
 import database
 from anthill import Agent
-from anthill.types import AgentFunction
 from anthill.repl import run_demo_loop
 
-class RefundItem(AgentFunction):
-    user_id: int
-    item_id: int
-
-    def run(self, **kwargs):
-        """Initiate a refund based on the user ID and item ID.
-        Takes as input arguments in the format '{"user_id":"1","item_id":"3"}'
+def refund_item(user_id, item_id):
+    """Initiate a refund based on the user ID and item ID.
+    Takes as input arguments in the format '{"user_id":"1","item_id":"3"}'
+    """
+    conn = database.get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
         """
-        conn = database.get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT amount FROM PurchaseHistory
-            WHERE user_id = ? AND item_id = ?
-        """,
-            (self.user_id, self.item_id),
-        )
-        result = cursor.fetchone()
-        if result:
-            amount = result[0]
-            output = f"Refunding ${amount} to user ID {self.user_id} for item ID {self.item_id}."
+        SELECT amount FROM PurchaseHistory
+        WHERE user_id = ? AND item_id = ?
+    """,
+        (user_id, item_id),
+    )
+    result = cursor.fetchone()
+    if result:
+        amount = result[0]
+        print(f"Refunding ${amount} to user ID {user_id} for item ID {item_id}.")
+    else:
+        print(f"No purchase found for user ID {user_id} and item ID {item_id}.")
+    print("Refund initiated")
+
+
+def notify_customer(user_id, method):
+    """Notify a customer by their preferred method of either phone or email.
+    Takes as input arguments in the format '{"user_id":"1","method":"email"}'"""
+
+    conn = database.get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT email, phone FROM Users
+        WHERE user_id = ?
+    """,
+        (user_id,),
+    )
+    user = cursor.fetchone()
+    if user:
+        email, phone = user
+        if method == "email" and email:
+            print(f"Emailed customer {email} a notification.")
+        elif method == "phone" and phone:
+            print(f"Texted customer {phone} a notification.")
         else:
-            output = f"No purchase found for user ID {self.user_id} and item ID {self.item_id}."
-        print(output)
-        return output
+            print(f"No {method} contact available for user ID {user_id}.")
+    else:
+        print(f"User ID {user_id} not found.")
 
-class NotifyCustomer(AgentFunction):
-    user_id: int
-    method: str
 
-    def run(self, **kwargs):
-        """Notify a customer by their preferred method of either phone or email.
-        Takes as input arguments in the format '{"user_id":"1","method":"email"}'"""
+def order_item(user_id, product_id):
+    """Place an order for a product based on the user ID and product ID.
+    Takes as input arguments in the format '{"user_id":"1","product_id":"2"}'"""
+    date_of_purchase = datetime.datetime.now()
+    item_id = random.randint(1, 300)
 
-        conn = database.get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT email, phone FROM Users
-            WHERE user_id = ?
-        """,
-            (self.user_id,),
+    conn = database.get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT product_id, product_name, price FROM Products
+        WHERE product_id = ?
+    """,
+        (product_id,),
+    )
+    result = cursor.fetchone()
+    if result:
+        product_id, product_name, price = result
+        print(
+            f"Ordering product {product_name} for user ID {user_id}. The price is {price}."
         )
-        user = cursor.fetchone()
-        if user:
-            email, phone = user
-            if self.method == "email" and email:
-                output = f"Emailed customer {email} a notification."
-            elif self.method == "phone" and phone:
-                output = f"Texted customer {phone} a notification."
-            else:
-                output = f"No {self.method} contact available for user ID {self.user_id}."
-        else:
-            output = f"User ID {self.user_id} not found."
-        print(output)
-        return output
-
-class OrderItem(AgentFunction):
-    user_id: int
-    product_id: int
-
-    def run(self, **kwargs):
-        """Place an order for a product based on the user ID and product ID.
-        Takes as input arguments in the format '{"user_id":"1","product_id":"2"}'"""
-        date_of_purchase = datetime.datetime.now()
-        item_id = random.randint(1, 300)
-
-        conn = database.get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT product_id, product_name, price FROM Products
-            WHERE product_id = ?
-        """,
-            (self.product_id,),
-        )
-        result = cursor.fetchone()
-        if result:
-            product_id, product_name, price = result
-            output = f"Ordering product {product_name} for user ID {self.user_id}. The price is {price}."
-            
-            # Add the purchase to the database
-            database.add_purchase(self.user_id, date_of_purchase, item_id, price)
-        else:
-            output = f"Product {self.product_id} not found."
-        print(output)
-        return output
+        # Add the purchase to the database
+        database.add_purchase(user_id, date_of_purchase, item_id, price)
+    else:
+        print(f"Product {product_id} not found.")
 
 
 # Initialize the database
@@ -107,29 +92,29 @@ database.preview_table("Products")
 
 refunds_agent = Agent(
     name="Refunds Agent",
-    model="groq/llama-3.1-70b-versatile",
+    model="groq/llama-3.3-70b-versatile",
     instructions=f"""You are a refund agent that handles all actions related to refunds after a return has been processed.
     You must ask for both the user ID and item ID to initiate a refund. Ask for both user_id and item_id in one message.
     If the user asks you to notify them, you must ask them what their preferred method of notification is. For notifications, you must
     ask them for user_id and method in one message.""",
-    functions=[RefundItem, NotifyCustomer],
+    functions=[refund_item, notify_customer],
 )
 
 sales_agent = Agent(
     name="Sales Agent",
-    model="groq/llama-3.1-70b-versatile",
+    model="groq/llama-3.3-70b-versatile",
     instructions=f"""You are a sales agent that handles all actions related to placing an order to purchase an item.
     Regardless of what the user wants to purchase, must ask for BOTH the user ID and product ID to place an order.
     An order cannot be placed without these two pieces of information. Ask for both user_id and product_id in one message.
     If the user asks you to notify them, you must ask them what their preferred method is. For notifications, you must
     ask them for user_id and method in one message.
     """,
-    functions=[OrderItem, NotifyCustomer],
+    functions=[order_item, notify_customer],
 )
 
 triage_agent = Agent(
     name="Triage Agent",
-    model="groq/llama-3.1-70b-versatile",
+    model="groq/llama-3.3-70b-versatile",
     instructions=f"""You are to triage a users request, and call a tool to transfer to the right intent.
     Once you are ready to transfer to the right intent, call the tool to transfer to the right intent.
     You dont need to know specifics, just the topic of the request.
@@ -139,9 +124,19 @@ triage_agent = Agent(
     Do not share your thought process with the user! Do not make unreasonable assumptions on behalf of user.""",
 )
 
-triage_agent.transfers = [sales_agent, refunds_agent]
-sales_agent.transfers = [triage_agent]
-refunds_agent.transfers = [triage_agent]
+def transfer_to_sales():
+    return sales_agent
+
+def transfer_to_refunds():
+    return refunds_agent
+
+def transfer_to_triage():
+    return triage_agent
+
+triage_agent.functions.append(transfer_to_sales)
+triage_agent.functions.append(transfer_to_refunds)
+sales_agent.functions.append(transfer_to_triage)
+refunds_agent.functions.append(transfer_to_triage)
 
 for f in triage_agent.functions:
     print(f.__name__)

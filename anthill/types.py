@@ -5,19 +5,8 @@ from pydantic import BaseModel, Field
 
 
 class AgentResponse(BaseModel):
+    func_name: Literal["agent_response"]
     content: str
-
-
-class AgentFunction(BaseModel):
-
-    def run(self, **kwargs):
-        raise NotImplementedError()
-
-
-class TransferToAgent(BaseModel):
-    agent_id: int = Field(..., description="The agent id to tranfer to.")
-    name: str
-
 
 class Agent(BaseModel):
     name: str = "Agent"
@@ -25,7 +14,6 @@ class Agent(BaseModel):
     instructions: Union[str, List, Callable[[], str]
                         ] = "You are a helpful agent."
     functions: List = []
-    transfers: List["Agent"] = []
     model_params: Optional[dict] = {}
 
 

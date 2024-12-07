@@ -1,7 +1,7 @@
 from jinja2 import Environment
 
 PROMPT = """
-Your are {{ agent_name }}. You must use AgentResponse to answer/ask to user.
+Your are {{ agent_name }}. You must use agent_response tool to answer/ask to user and use transfer tools when is not related to your topic.
 
 ## INSTRUCTIONS
 {{ instructions }}
@@ -9,28 +9,24 @@ Your are {{ agent_name }}. You must use AgentResponse to answer/ask to user.
 ## NOT ALLAOWED
 - Make assumptions
 - Use placeholders
+- Saying you will use tools. E.g: I'll need to ...
 
-{%- if agent_list %}
 ## TEAM AGENTS
-You are part of a teams of Agents (agent_id: name):
-{% for agent in agent_list %}
-{{ agent.id }}: {{ agent.name }}
-{% endfor %}
-{% endif %}
+You are part of a team of agents, if any transfer tool/function are available use it to transfer to you team.
+
 {%- if tool_list %}
-## TOOLS
+## TOOLS/FUNCTIONS
 {% for tool in tool_list %}
 {{ tool.name }}: {{ tool.doc }}
 {% endfor %}
 {% endif %}
 """
 
-def build_prompt(agent_name, instructions, agent_list, tool_list):
+def build_prompt(agent_name, instructions, tool_list):
     template = Environment().from_string(PROMPT)
     template_content = template.render(
         agent_name=agent_name,
         instructions=instructions,
-        agent_list=agent_list,
         tool_list=tool_list
     )
     return template_content

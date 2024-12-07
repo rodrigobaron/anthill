@@ -637,5 +637,151 @@
         "correct_evals": 4,
         "total_evals": 4,
         "overall_accuracy_percent": "100.00%"
+    },
+    {
+        "id": "66a3cc3d-cb1f-46fb-8efa-2fad995016e2",
+        "timestamp": "2024-12-06T20:51:29.967003",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "My bag was not delivered!"
+                    }
+                ],
+                "expected_function": "transfer_to_lost_baggage",
+                "actual_function": [
+                    "transfer_to_lost_baggage"
+                ],
+                "actual_message": [
+                    "None"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I had some turbulence on my flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "Can you please tell me more about what happened during the turbulence? Were you injured or did you experience any issues with your flight?"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight please"
+                    }
+                ],
+                "expected_function": "transfer_to_flight_modification",
+                "actual_function": [
+                    "transfer_to_flight_modification"
+                ],
+                "actual_message": [
+                    "None"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "What is the meaning of life"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "The meaning of life is a profound and complex question that has been debated by philosophers, theologians, and many others for centuries. It's a topic that doesn't fit directly within our typical scope of assistance. If you have any other questions or need help with something more specific, feel free to ask."
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 4,
+        "total_evals": 4,
+        "overall_accuracy_percent": "100.00%"
+    },
+    {
+        "id": "95222faa-4647-4dfa-b5b4-47c05076d1ad",
+        "timestamp": "2024-12-07T11:53:05.489389",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "My bag was not delivered!"
+                    }
+                ],
+                "expected_function": "transfer_to_lost_baggage",
+                "actual_function": [
+                    "transfer_to_lost_baggage"
+                ],
+                "actual_message": [
+                    "None"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I had some turbulence on my flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "Can you please tell me more about what happened during the turbulence? Were you affected in any way?"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight please"
+                    }
+                ],
+                "expected_function": "transfer_to_flight_modification",
+                "actual_function": [
+                    "transfer_to_flight_modification"
+                ],
+                "actual_message": [
+                    "None"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "What is the meaning of life"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "That's a very philosophical question. Could you provide more context or specify what aspect of the 'meaning of life' you're interested in?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 4,
+        "total_evals": 4,
+        "overall_accuracy_percent": "100.00%"
     }
 ]

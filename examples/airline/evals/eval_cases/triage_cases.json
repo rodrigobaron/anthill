@@ -1,9 +1,9 @@
 [
     {
         "conversation": [
-            {"role": "user", "content": "I lost my bag!"}
+            {"role": "user", "content": "My bag was not delivered!"}
         ],
-        "function": "TransferToAgent:2"
+        "function": "transfer_to_lost_baggage"
     },
     {
         "conversation": [
@@ -15,7 +15,7 @@
         "conversation": [
             {"role": "user", "content": "I want to cancel my flight please"}
         ],
-        "function": "TransferToAgent:1"
+        "function": "transfer_to_flight_modification"
     },
     {
         "conversation": [

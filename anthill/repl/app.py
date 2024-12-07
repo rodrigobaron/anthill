@@ -3,32 +3,33 @@ import sys
 import subprocess
 import json
 from pathlib import Path
+import inspect
+import base64
+import dill
 
 def serialize_agent(agent, seen=None):
-    """
-    Serialize an Agent object to a JSON string, handling circular references.
-    
-    Args:
-        agent: The agent to serialize
-        seen: Set of agent names already processed to avoid cycles
-    """
     if seen is None:
         seen = set()
         
-    # If we've seen this agent before, just return its name
     if agent.name in seen:
         return agent.name
         
-    # Add this agent to seen set
-    seen.add(agent.name)
+    # Serialize functions using dill
+    serialized_functions = []
+    for func in agent.functions:
+        func_code = inspect.getsource(func)
+        serialized_func = base64.b64encode(dill.dumps(func)).decode('utf-8')
+        serialized_functions.append({
+            'name': func.__name__,
+            'source': func_code,
+            'serialized': serialized_func
+        })
     
-    # Create serializable dict
     agent_dict = {
         'name': agent.name,
         'model': agent.model,
         'instructions': agent.instructions,
-        'functions': [f.__name__ for f in agent.functions],
-        'transfers': [serialize_agent(a, seen) for a in agent.transfers],
+        'functions': serialized_functions,
         'model_params': agent.model_params
     }
     

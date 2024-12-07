@@ -7,31 +7,38 @@ from anthill.types import Message
 def process_and_print_streaming_response(response):
     content = ""
     last_sender = ""
+    tool_calls_printed = False
 
     for chunk in response:
         if isinstance(chunk, Message):
-            if chunk.sender:
+            # Handle sender/role changes
+            if chunk.sender and chunk.sender != last_sender:
                 last_sender = chunk.sender
+                print(f"\033[94m{last_sender}:\033[0m", end=" ", flush=True)
 
-            if chunk.content:
-                if not content and last_sender:
-                    print(f"\033[94m{last_sender}:\033[0m", end=" ", flush=True)
-                    last_sender = ""
-                print(chunk.content, end="", flush=True)
+            # Handle content streaming
+            if chunk.content is not None:
+                # Only print the new content (delta)
+                new_content = chunk.content[len(content):]
+                print(new_content, end="", flush=True)
                 content = chunk.content
 
-            tool_calls = chunk.tool_calls or []
-            for tool_call in tool_calls:
-                name, args = tool_call["name"], tool_call["arguments"]
-                if not name:
-                    continue
-                arg_str = args.model_dump_json().replace(":", "=")
-                print(f"\033[94m{last_sender}: \033[95m{name}\033[0m({arg_str[1:-1]})")
+            # Handle tool calls
+            if chunk.tool_calls is not None and len(chunk.tool_calls) > 0 and not tool_calls_printed:
+                for tool_call in chunk.tool_calls:
+                    name = tool_call["name"]
+                    if name:
+                        print(f"\033[95m{name}\033[0m()", end="", flush=True)
+                tool_calls_printed = True  # Mark tool calls as printed to avoid duplicates
 
-        if "delim" in chunk and chunk["delim"] == "end" and content:
-            print()  # End of response message
+        # Handle end of message
+        if "delim" in chunk and chunk["delim"] == "end":
+            if content or tool_calls_printed:
+                print()  # Add final newline
             content = ""
+            tool_calls_printed = False
 
+        # Handle response object
         if "response" in chunk:
             return chunk["response"]
 

@@ -1,18 +1,15 @@
 from anthill import Anthill, Agent
-from anthill.types import AgentFunction
 
 client = Anthill()
 
-class GetWeather(AgentFunction):
-    location: str
-    def run(self, **kwargs):
-        return "{'temp':67, 'unit':'F'}"
+def get_weather(location) -> str:
+    return "{'temp':67, 'unit':'F'}"
 
 agent = Agent(
     name="Agent",
-    model="groq/llama-3.1-70b-versatile",
+    model="groq/llama-3.3-70b-versatile",
     instructions="You are a helpful agent.",
-    functions=[GetWeather],
+    functions=[get_weather],
 )
 
 messages = [{"role": "user", "content": "What's the weather in NYC?"}]

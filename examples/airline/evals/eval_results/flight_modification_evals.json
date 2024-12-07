@@ -412,5 +412,119 @@
         "correct_evals": 3,
         "total_evals": 3,
         "overall_accuracy_percent": "100.00%"
+    },
+    {
+        "id": "e619730a-2b0f-4338-b88b-716ea8480b41",
+        "timestamp": "2024-12-06T20:51:34.801431",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to change my flight to one day earlier!"
+                    }
+                ],
+                "expected_function": "transfer_to_flight_change",
+                "actual_function": [
+                    "transfer_to_flight_change"
+                ],
+                "actual_message": [
+                    "None"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight. I can't make it anymore due to a personal conflict"
+                    }
+                ],
+                "expected_function": "transfer_to_flight_cancel",
+                "actual_function": [
+                    "transfer_to_flight_cancel"
+                ],
+                "actual_message": [
+                    "None"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I dont want this flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "Are you looking to cancel your flight or make changes to your existing booking?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 3,
+        "total_evals": 3,
+        "overall_accuracy_percent": "100.00%"
+    },
+    {
+        "id": "f88f51ae-5ec2-4fd3-bfdf-d5293c491c38",
+        "timestamp": "2024-12-07T11:53:10.120646",
+        "results": [
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to change my flight to one day earlier!"
+                    }
+                ],
+                "expected_function": "transfer_to_flight_change",
+                "actual_function": [
+                    "transfer_to_flight_change"
+                ],
+                "actual_message": [
+                    "None"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I want to cancel my flight. I can't make it anymore due to a personal conflict"
+                    }
+                ],
+                "expected_function": "transfer_to_flight_cancel",
+                "actual_function": [
+                    "transfer_to_flight_cancel"
+                ],
+                "actual_message": [
+                    "None"
+                ],
+                "case_accuracy": "100.00%"
+            },
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "I dont want this flight"
+                    }
+                ],
+                "expected_function": "None",
+                "actual_function": [
+                    "None"
+                ],
+                "actual_message": [
+                    "Would you like to cancel your flight or change it to a different one?"
+                ],
+                "case_accuracy": "100.00%"
+            }
+        ],
+        "correct_evals": 3,
+        "total_evals": 3,
+        "overall_accuracy_percent": "100.00%"
     }
 ]

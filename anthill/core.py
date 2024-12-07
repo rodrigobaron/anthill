@@ -6,7 +6,8 @@ from typing import List, Optional, Union
 
 # Package/library imports
 from pulsar.client import Client
-from pulsar.prompt import PLAN_PROMPT
+from pulsar.prompt import AGENTIC_PROMPT
+from pulsar.helpers import function_to_pydantic
 
 # Local imports
 from .util import debug_print
@@ -14,7 +15,6 @@ from .prompt import build_prompt
 from .types import (
     Agent,
     AgentResponse,
-    TransferToAgent,
     Message,
     Response,
     Result,
@@ -49,20 +49,15 @@ class Anthill:
         )
         instructions = "\n".join(
             [f"- {i}" for i in instructions]) if isinstance(instructions, list) else instructions
-        agent_list = [{"id": k + 1, "name": t_agent.name}
-                      for k, t_agent in enumerate(agent.transfers)]
-        tool_list = [{"name": f.__name__, "doc": f.__doc__}
+  
+        tool_list = [{"name": f.__name__, "doc": f.__doc__ if f.__doc__ is not None else ""}
                      for f in agent.functions]
-
-        if len(agent_list) > 0:
-            tool_list.append(
-                {
-                    "name": "TransferToAgent",
-                    "doc": "Tranfer to team Agent, use this tool right way you found necessary without acknowledge the user's"})
-
+        tool_list.append({"name": "agent_response", "doc": "Use this tool to answer/ask to user"})
+  
         system_prompt = build_prompt(
-            agent.name, instructions, agent_list, tool_list)
+            agent.name, instructions, tool_list)
         messages = []
+
         for h in history:
             if h["content"] is not None:
                 messages.append(dict(role=h["role"], content=h["content"]))
@@ -76,21 +71,16 @@ class Anthill:
             "Getting chat completion for...:",
             system_prompt,
             messages)
+        
+        # function_list = agent.functions
+        pydc_functions = [function_to_pydantic(f, include_name=True) for f in agent.functions]
 
-        if len(agent.functions) > 0:
-            type_agent_functions = Union[tuple(agent.functions)] if len(
-                agent.functions) > 1 else agent.functions[0]
-            if len(agent.transfers) > 0:
-                response_type = Union[AgentResponse,
-                                      TransferToAgent, List[type_agent_functions]]
-            else:
-                response_type = Union[AgentResponse,
-                                      List[type_agent_functions]]
+        if len(pydc_functions) > 1:
+            response_type = Union[AgentResponse, List[Union[*pydc_functions]]]
+        elif len(pydc_functions) > 0:
+            response_type = Union[AgentResponse, List[*pydc_functions]]
         else:
-            if len(agent.transfers) > 0:
-                response_type = Union[AgentResponse, TransferToAgent]
-            else:
-                response_type = AgentResponse
+            response_type = AgentResponse
 
         create_params = {
             "model": model_override or agent.model,
@@ -98,9 +88,10 @@ class Anthill:
             "system": system_prompt,
             "response_type": response_type,
             "stream": stream,
-            "prompt_template": PLAN_PROMPT,
+            "prompt_template": AGENTIC_PROMPT,
             **agent.model_params
         }
+
         response = self.client.chat_completion(**create_params)
         if stream:
             return response
@@ -115,10 +106,14 @@ class Anthill:
                            content=response.content)
 
         response = response if isinstance(response, list) else [response]
-        response = [{"name": r.__class__.__name__, "arguments": r}
-                    for r in response]
+        tool_calls = []
+        for r in response:
+            args = r.model_dump(mode="json")
+            name = args.pop("func_name")
+            tool_calls.append({"name": name, "arguments": args})
+
         return Message(sender=agent.name, role="assistant",
-                       tool_calls=response)
+                       tool_calls=tool_calls)
 
     def handle_function_result(self, result, debug) -> Result:
         match result:
@@ -149,15 +144,15 @@ class Anthill:
     ) -> Response:
         partial_response = Response(
             messages=[], agent=None, context_variables={})
+        
+        tool_dict = {f.__name__: f for f in current_agent.functions}
 
         for tool_call in tool_calls:
             name = tool_call["name"]
-            func = tool_call["arguments"]
+            args = tool_call["arguments"]
 
-            if isinstance(func, TransferToAgent):
-                raw_result = current_agent.transfers[func.agent_id - 1]
-            else:
-                raw_result = func.run(context_variables=context_variables)
+            func = tool_dict[name]
+            raw_result = func(**args)
 
             result: Result = self.handle_function_result(raw_result, debug)
 

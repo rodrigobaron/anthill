@@ -25,18 +25,21 @@ from anthill import Anthill, Agent
 
 client = Anthill()
 
+def transfer_to_agent_b():
+    return agent_b
+
 
 agent_a = Agent(
    name="Agent A",
    instructions="You are a helpful agent.",
-   model="groq/llama-3.1-70b-versatile",
-   transfers=[agent_b],
+   model="groq/llama-3.3-70b-versatile",
+   functions=[transfer_to_agent_b],
 )
 
 agent_b = Agent(
    name="Agent B",
    instructions="Only speak in Haikus.",
-   model="groq/llama-3.1-70b-versatile",
+   model="groq/llama-3.3-70b-versatile",
 )
 
 response = client.run(
@@ -153,7 +156,6 @@ While it's tempting to personify an `Agent` as "someone who does X", it can also
 | **model**        | `str`                    | The model to be used by the agent.                                            | `None`                   |
 | **instructions** | `str` or `func() -> str` | Instructions for the agent, can be a string or a callable returning a string. | `"You are a helpful agent."` |
 | **functions**    | `List`                   | A list of functions that the agent can call.                                  | `[]`                         |
-| **transfers**    | `List`                   | The agent list which can transfer to.                                         | `[]`                       |
 
 ### Instructions
 
@@ -195,17 +197,14 @@ Hi John, how can I assist you today?
 - If a function defines a `context_variables` parameter, it will be populated by the `context_variables` passed into `client.run()`.
 
 ```python
-class Greet(AgentFunction):
-   language: str
-
-   def run(self, **kwargs):
-      user_name = kwargs['context_variables']["user_name"]
-      greeting = "Hola" if self.language.lower() == "spanish" else "Hello"
-      print(f"{greeting}, {user_name}!")
-      return "Done"
+def greet(context_variables, language):
+   user_name = context_variables["user_name"]
+   greeting = "Hola" if language.lower() == "spanish" else "Hello"
+   print(f"{greeting}, {user_name}!")
+   return "Done"
 
 agent = Agent(
-   functions=[Greet]
+   functions=[greet]
 )
 
 client.run(
@@ -224,12 +223,15 @@ Hola, John!
 
 ### Handoffs and Updating Context Variables
 
-An `Agent` can hand off to another `Agent` by adding it to `transfers`.
+An `Agent` can hand off to another `Agent` by creating a `transfers` function that return an Agent.
 
 ```python
 sales_agent = Agent(name="Sales Agent")
 
-agent = Agent(tranfers=[sales_agent])
+def transfer_to_sales():
+   return sales_agent
+
+agent = Agent(functions=[transfer_to_sales])
 
 response = client.run(agent, [{"role":"user", "content":"Transfer me to sales."}])
 print(response.agent.name)
@@ -244,18 +246,15 @@ It can also update the `context_variables` by returning a more complete `Result`
 ```python
 sales_agent = Agent(name="Sales Agent")
 
-class TalkToSales(AgentFunction):
-   department: str
+def talk_to_sales():
+   print("Hello, World!")
+   return Result(
+       value="Done",
+       agent=sales_agent,
+       context_variables={"department": "sales"}
+   )
 
-   def run(self, **kwargs):
-      print("Hello, World!")
-      return Result(
-         value="Done",
-         agent=sales_agent,
-         context_variables={"department": self.department}
-      )
-
-agent = Agent(functions=[TalkToSales])
+agent = Agent(functions=[talk_to_sales])
 
 response = client.run(
    agent=agent,
@@ -274,33 +273,6 @@ Sales Agent
 > [!NOTE]
 > If an `Agent` calls multiple functions to hand-off to an `Agent`, only the last handoff function will be used.
 
-### Function Schemas
-
-Anthill automatically converts class tools into a JSON Schema that is passed into Chat Completions prompt.
-
-- Docstrings are turned into the function `description`.
-- Parameters without optional and default values are set to `required`.
-- Type hints are mapped to the parameter's `type` (and default to `string`).
-- Per-parameter descriptions are supported, by using pydantic fields.
-
-```python
-class Greet(AgentFunction):
-   """Greets the user. Make sure to get their name and age before calling.
-
-   Args:
-      name: Name of the user.
-      age: Age of the user.
-      location: Best place on earth.
-   """
-   name: str
-   age: int
-   location: str = "New York"
-
-   def run(self, **kwargs):
-      result = f"Hello {self.name}, glad you are {self.age} in {self.location}!"
-      print(result)
-      return result
-```
 
 ## Streaming
 

@@ -4,7 +4,7 @@ client = Anthill()
 
 my_agent = Agent(
     name="Agent",
-    model="groq/llama-3.1-70b-versatile",
+    model="groq/llama-3.3-70b-versatile",
     instructions="You are a helpful agent.",
 )
 

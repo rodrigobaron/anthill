@@ -1,40 +1,28 @@
-from typing import Optional, Literal
-from anthill import AgentFunction
+def escalate_to_agent(reason=None):
+    return f"Escalating to agent: {reason}" if reason else "Escalating to agent"
 
 
-class EscalateToAgent(AgentFunction):
-    function_name: Literal["escalate_to_agent"]
-    reason: Optional[str] = None
+def valid_to_change_flight():
+    return "Customer is eligible to change flight"
 
-    def run(self, **kwargs):
-        return f"Escalating to agent: {self.reason}" if self.reason else "Escalating to agent"
 
-class ValidToChangeFlight(AgentFunction):
-    function_name: Literal["valid_to_change_flight"]
-    def run(self, **kwargs):
-        return "Customer is eligible to change flight"
+def change_flight():
+    return "Flight was successfully changed!"
 
-class ChangeFlight(AgentFunction):
-    function_name: Literal["change_flight"]
-    def run(self, **kwargs):
-        return "Flight was successfully changed!"
 
-class InitiateRefund(AgentFunction):
-    function_name: Literal["initiate_refund"]
-    def run(self, **kwargs):
-        return "Refund initiated"
+def initiate_refund():
+    status = "Refund initiated"
+    return status
 
-class InitiateFlightCredits(AgentFunction):
-    function_name: Literal["initiate_flight_credits"]
-    def run(self, **kwargs):
-        return "Successfully initiated flight credits"
 
-class CaseResolved(AgentFunction):
-    function_name: Literal["case_resolved"]
-    def run(self, **kwargs):
-        return "Case resolved. No further questions."
+def initiate_flight_credits():
+    status = "Successfully initiated flight credits"
+    return status
 
-class InitiateBaggageSearch(AgentFunction):
-    function_name: Literal["initiate_baggage_search"]
-    def run(self, **kwargs):
-        return "Baggage was found!"
+
+def case_resolved():
+    return "Case resolved. No further questions."
+
+
+def initiate_baggage_search():
+    return "Baggage was found!"

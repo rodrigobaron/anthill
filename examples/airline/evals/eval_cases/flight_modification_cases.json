@@ -3,13 +3,13 @@
       "conversation": [
           {"role": "user", "content": "I want to change my flight to one day earlier!"}
       ],
-      "function": "TransferToAgent:2"
+      "function": "transfer_to_flight_change"
   },
   {
       "conversation": [
           {"role": "user", "content": "I want to cancel my flight. I can't make it anymore due to a personal conflict"}
       ],
-      "function": "TransferToAgent:1"
+      "function": "transfer_to_flight_cancel"
   },
   {
       "conversation": [
