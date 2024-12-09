@@ -71,9 +71,8 @@ class Anthill:
             "Getting chat completion for...:",
             system_prompt,
             messages)
-        
-        # function_list = agent.functions
-        pydc_functions = [function_to_pydantic(f, include_name=True) for f in agent.functions]
+
+        pydc_functions = [function_to_pydantic(f, include_name=True, skip_params=[__CTX_VARS_NAME__]) for f in agent.functions]
 
         if len(pydc_functions) > 1:
             response_type = Union[AgentResponse, List[Union[*pydc_functions]]]
@@ -152,6 +151,10 @@ class Anthill:
             args = tool_call["arguments"]
 
             func = tool_dict[name]
+            
+            if __CTX_VARS_NAME__ in func.__code__.co_varnames:
+                args[__CTX_VARS_NAME__] = context_variables
+
             raw_result = func(**args)
 
             result: Result = self.handle_function_result(raw_result, debug)
