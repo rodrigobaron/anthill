@@ -7,19 +7,10 @@ to a sales or refunds agent.
 
 To run the triage agent Anthill:
 
-1. Copy env.example
+1. Run
 
 ```shell
-$ cp .env.example .env
-```
-
-2. Set GROQ API KEY, or other provider endpoint if using other model
-
-
-3. Run
-
-```shell
-$ python3 run.py
+python3 run.py
 ```
 
 ## Evals
@@ -34,5 +25,5 @@ is 'successful', as defined in our prompt in `evals.py`.
 To run the evals, run
 
 ```shell
-$ pytest evals.py
+pytest evals.py
 ```

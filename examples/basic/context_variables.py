@@ -9,6 +9,7 @@ def instructions(context_variables):
 
 
 def print_account_details(context_variables: dict):
+    """Use this function to print account system account details"""
     user_id = context_variables.get("user_id", None)
     name = context_variables.get("name", None)
     print(f"Account Details: {name} {user_id}")
@@ -17,6 +18,7 @@ def print_account_details(context_variables: dict):
 
 agent = Agent(
     name="Agent",
+    model="groq/llama-3.3-70b-versatile",
     instructions=instructions,
     functions=[print_account_details],
 )

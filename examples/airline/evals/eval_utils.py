@@ -92,8 +92,6 @@ def run_function_evals(agent, test_cases, n=1, eval_path=None):
 
     return overall_accuracy
 
-    return overall_accuracy
-
 
 def extract_response_info(response):
     results = {}

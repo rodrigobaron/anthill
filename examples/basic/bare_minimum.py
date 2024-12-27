@@ -1,9 +1,10 @@
-from swarm import Swarm, Agent
+from anthill import Anthill, Agent
 
-client = Swarm()
+client = Anthill()
 
 agent = Agent(
     name="Agent",
+    model="groq/llama-3.3-70b-versatile",
     instructions="You are a helpful agent.",
 )
 

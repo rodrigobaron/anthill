@@ -1,7 +1,7 @@
-from configs.tools import *
-from data.routines.baggage.policies import *
-from data.routines.flight_modification.policies import *
-from data.routines.prompts import STARTER_PROMPT
+from examples.airline.configs.tools import *
+from examples.airline.data.routines.baggage.policies import *
+from examples.airline.data.routines.flight_modification.policies import *
+from examples.airline.data.routines.prompts import STARTER_PROMPT
 
 from anthill import Agent
 
@@ -43,6 +43,7 @@ def triage_instructions(context_variables):
 triage_agent = Agent(
     name="Triage Agent",
     instructions=triage_instructions,
+    model="groq/llama-3.3-70b-versatile",
     functions=[transfer_to_flight_modification, transfer_to_lost_baggage],
 )
 
@@ -52,6 +53,7 @@ flight_modification = Agent(
       You are an expert customer service agent deciding which sub intent the user should be referred to.
 You already know the intent is for flight modification related question. First, look at message history and see if you can determine if the user wants to cancel or change their flight.
 Ask user clarifying questions until you know whether or not it is a cancel request or change flight request. Once you know, call the appropriate transfer function. Either ask clarifying questions, or call one of your functions, every time.""",
+    model="groq/llama-3.3-70b-versatile",
     functions=[transfer_to_flight_cancel, transfer_to_flight_change],
     parallel_tool_calls=False,
 )
@@ -59,6 +61,7 @@ Ask user clarifying questions until you know whether or not it is a cancel reque
 flight_cancel = Agent(
     name="Flight cancel traversal",
     instructions=STARTER_PROMPT + FLIGHT_CANCELLATION_POLICY,
+    model="groq/llama-3.3-70b-versatile",
     functions=[
         escalate_to_agent,
         initiate_refund,
@@ -71,6 +74,7 @@ flight_cancel = Agent(
 flight_change = Agent(
     name="Flight change traversal",
     instructions=STARTER_PROMPT + FLIGHT_CHANGE_POLICY,
+    model="groq/llama-3.3-70b-versatile",
     functions=[
         escalate_to_agent,
         change_flight,
@@ -83,6 +87,7 @@ flight_change = Agent(
 lost_baggage = Agent(
     name="Lost baggage traversal",
     instructions=STARTER_PROMPT + LOST_BAGGAGE_POLICY,
+    model="groq/llama-3.3-70b-versatile",
     functions=[
         escalate_to_agent,
         initiate_baggage_search,

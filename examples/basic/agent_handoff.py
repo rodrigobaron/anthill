@@ -4,14 +4,15 @@ client = Anthill()
 
 english_agent = Agent(
     name="English Agent",
+    model="groq/llama-3.3-70b-versatile",
     instructions="You only speak English.",
 )
 
 spanish_agent = Agent(
     name="Spanish Agent",
-    instructions="You only speak Spanish.",
+    model="groq/llama-3.3-70b-versatile",
+    instructions="You only speak Spanish to the user.",
 )
-
 
 def transfer_to_spanish_agent():
     """Transfer spanish speaking users immediately."""

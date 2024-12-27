@@ -3,9 +3,7 @@ import random
 
 import database
 from anthill import Agent
-from anthill.agents import create_triage_agent
 from anthill.repl import run_demo_loop
-
 
 def refund_item(user_id, item_id):
     """Initiate a refund based on the user ID and item ID.
@@ -94,7 +92,8 @@ database.preview_table("Products")
 
 refunds_agent = Agent(
     name="Refunds Agent",
-    description=f"""You are a refund agent that handles all actions related to refunds after a return has been processed.
+    model="groq/llama-3.3-70b-versatile",
+    instructions=f"""You are a refund agent that handles all actions related to refunds after a return has been processed.
     You must ask for both the user ID and item ID to initiate a refund. Ask for both user_id and item_id in one message.
     If the user asks you to notify them, you must ask them what their preferred method of notification is. For notifications, you must
     ask them for user_id and method in one message.""",
@@ -103,7 +102,8 @@ refunds_agent = Agent(
 
 sales_agent = Agent(
     name="Sales Agent",
-    description=f"""You are a sales agent that handles all actions related to placing an order to purchase an item.
+    model="groq/llama-3.3-70b-versatile",
+    instructions=f"""You are a sales agent that handles all actions related to placing an order to purchase an item.
     Regardless of what the user wants to purchase, must ask for BOTH the user ID and product ID to place an order.
     An order cannot be placed without these two pieces of information. Ask for both user_id and product_id in one message.
     If the user asks you to notify them, you must ask them what their preferred method is. For notifications, you must
@@ -112,8 +112,9 @@ sales_agent = Agent(
     functions=[order_item, notify_customer],
 )
 
-triage_agent = create_triage_agent(
+triage_agent = Agent(
     name="Triage Agent",
+    model="groq/llama-3.3-70b-versatile",
     instructions=f"""You are to triage a users request, and call a tool to transfer to the right intent.
     Once you are ready to transfer to the right intent, call the tool to transfer to the right intent.
     You dont need to know specifics, just the topic of the request.
@@ -121,13 +122,25 @@ triage_agent = create_triage_agent(
     If the user request is about getting a refund on an item or returning a product, transfer to the Refunds Agent.
     When you need more information to triage the request to an agent, ask a direct question without explaining why you're asking it.
     Do not share your thought process with the user! Do not make unreasonable assumptions on behalf of user.""",
-    agents=[sales_agent, refunds_agent],
-    add_backlinks=True,
 )
+
+def transfer_to_sales():
+    return sales_agent
+
+def transfer_to_refunds():
+    return refunds_agent
+
+def transfer_to_triage():
+    return triage_agent
+
+triage_agent.functions.append(transfer_to_sales)
+triage_agent.functions.append(transfer_to_refunds)
+sales_agent.functions.append(transfer_to_triage)
+refunds_agent.functions.append(transfer_to_triage)
 
 for f in triage_agent.functions:
     print(f.__name__)
 
 if __name__ == "__main__":
     # Run the demo loop
-    run_demo_loop(triage_agent, debug=False)
+    run_demo_loop(starting_agent=triage_agent, debug=False)

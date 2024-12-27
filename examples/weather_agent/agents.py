@@ -1,10 +1,6 @@
 import json
-
+from typing import Optional
 from anthill import Agent
-from dotenv import load_dotenv
-
-load_dotenv()
-
 
 def get_weather(location, time="now"):
     """Get the current weather in a given location. Location MUST be a city."""
@@ -21,7 +17,7 @@ def send_email(recipient, subject, body):
 
 weather_agent = Agent(
     name="Weather Agent",
-    model="openrouter/meta-llama/llama-3.1-70b-instruct:free",
-    instructions="You are a helpful agent.",
+    model="groq/llama-3.3-70b-versatile",
+    instructions="You are a helpful agent which help user with weather. Answer the user about weather or just say: I DO NOT KNOW!",
     functions=[get_weather, send_email],
 )

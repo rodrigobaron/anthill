@@ -7,7 +7,7 @@ import json
 client = Anthill()
 
 CONVERSATIONAL_EVAL_SYSTEM_PROMPT = """
-You will be provided with a conversation between a user and an agent, as well as a main goal for the conversation.
+You will be provided with a conversation between a user and an agent.
 Your goal is to evaluate, based on the conversation, if the agent achieves the main goal or not.
 
 To assess whether the agent manages to achieve the main goal, consider the instructions present in the main goal, as well as the way the user responds:
@@ -17,9 +17,8 @@ It is possible that the user is not satisfied with the answer, but the agent sti
 
 
 def conversation_was_successful(messages) -> bool:
-    conversation = f"CONVERSATION: {json.dumps(messages)}"
     result: BoolEvalResult = evaluate_with_llm_bool(
-        CONVERSATIONAL_EVAL_SYSTEM_PROMPT, conversation
+        CONVERSATIONAL_EVAL_SYSTEM_PROMPT, messages
     )
     return result.value
 
@@ -45,7 +44,7 @@ def test_triage_agent_calls_correct_function(query, function_name):
     tool_calls = run_and_get_tool_calls(triage_agent, query)
 
     assert len(tool_calls) == 1
-    assert tool_calls[0]["function"]["name"] == function_name
+    assert tool_calls[0]["name"] == function_name
 
 
 @pytest.mark.parametrize(
@@ -59,7 +58,8 @@ def test_triage_agent_calls_correct_function(query, function_name):
             {"role": "user", "content": "Hello!"},
             {"role": "assistant", "content": "Hi there! How can I assist you today?"},
             {"role": "user", "content": "I want to make a refund."},
-            {"role": "tool", "tool_name": "transfer_to_refunds"},
+            {"role": "tool", "tool_name": "transfer_to_refunds", "content": "Current agent: Refunds Agent"},
+            {"role": "assistant", "content": "Your refund as placed"},
             {"role": "user", "content": "Thank you!"},
             {"role": "assistant", "content": "You're welcome! Have a great day!"},
         ],
